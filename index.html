@@ -10,7 +10,7 @@
     
     <style>
         body { 
-            /* SMOKY BACKGROUND GRADIENT */
+            /* DEEP ESPRESSO GRADIENT BACKGROUND */
             background: radial-gradient(circle at 50% 40%, #16110f 0%, #0c0806 70%);
             background-color: #0c0806; 
             color: #f5f0eb; 
@@ -35,6 +35,8 @@
             from { opacity: 0; transform: scale(0.98) translateY(4px); }
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
+        
+        /* SUBTLE SLOWLY RISING CSS ANIMATED STEAM LINES */
         @keyframes wavy-smoke-drift {
             0% { transform: translateY(100vh) translateX(0) scaleX(1); opacity: 0; }
             10% { opacity: 0.04; }
@@ -71,7 +73,7 @@
     <div id="app" class="min-h-screen flex flex-col relative z-10"></div>
 
     <script>
-        // 1. FORCE HARDCODED DATA DIRECTLY IN RENDERING STATE
+        // 4. BULLETPROOF LOUNGE ARTICLE RECOVERY CONSTANT ARRAY
         const DEFAULT_LOUNGE_POSTS = [
             { 
                 id: 'lounge-post-gaming', 
@@ -92,7 +94,7 @@
                 handle: '@cafe_writer',
                 category: '#Sports', 
                 readTime: '4 min read',
-                likes: 12,
+                likes: 19,
                 rating: 5
             },
             { 
@@ -103,7 +105,7 @@
                 handle: '@cafe_writer',
                 category: '#Education', 
                 readTime: '4 min read',
-                likes: 12,
+                likes: 31,
                 rating: 5
             },
             { 
@@ -114,7 +116,7 @@
                 handle: '@cafe_writer',
                 category: '#News', 
                 readTime: '4 min read',
-                likes: 12,
+                likes: 15,
                 rating: 5
             },
             { 
@@ -125,7 +127,7 @@
                 handle: '@cafe_writer',
                 category: '#GeneralKnowledge', 
                 readTime: '4 min read',
-                likes: 12,
+                likes: 42,
                 rating: 5
             }
         ];
@@ -137,7 +139,7 @@
             "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=120&h=120"
         ];
 
-        // --- CORE APPLICATION STATE ENGINE ---
+        // --- CORE STATE BOOTSTRAPPER ---
         function bootstrapCoreEngine() {
             const isAuth = localStorage.getItem('anteiku_authenticated') === 'true';
             const currentEmail = localStorage.getItem('anteiku_current_email') || '';
@@ -148,13 +150,12 @@
             
             const profile = savedProfile ? JSON.parse(savedProfile) : {
                 name: 'Guest Writer',
-                username: '',
+                username: 'guest_writer',
                 avatar: defaultCafeAvatars[0],
                 bio: 'Writing from the corner booth.',
                 followers: 0
             };
 
-            // 2. BYPASS THE EMPTY CHECK WITH AUTOMATIC FALLBACK
             const savedArticles = localStorage.getItem('anteiku_articles');
             let articles = [];
             if (savedArticles) {
@@ -193,8 +194,10 @@
                 writerSelectedCategory: 'Gaming',
                 customToast: { show: false, title: '', message: '' },
                 
-                isEditProfilePanelOpen: false,
+                // Modal Profile Overlay Rules
+                isEditProfileModalOpen: false,
                 editProfileNameValue: profile.name || '',
+                editProfileUsernameValue: profile.username || '',
                 editProfileBioValue: profile.bio || '',
                 editProfileAvatarValue: profile.avatar || defaultCafeAvatars[0],
                 editCustomAvatarSelected: false,
@@ -261,23 +264,17 @@
             } else {
                 state.profile = {
                     name: 'Guest Writer',
-                    username: '',
+                    username: 'guest_writer',
                     avatar: defaultCafeAvatars[0],
                     bio: 'Writing from the corner booth.',
                     followers: 0
                 };
             }
 
-            const savedNotifications = localStorage.getItem(`anteiku_notifications_${emailKey}`);
-            state.notifications = savedNotifications ? JSON.parse(savedNotifications) : [];
-
             state.onboardingNameValue = state.profile.name || '';
             state.onboardingUsernameValue = state.profile.username || '';
             
-            state.editProfileNameValue = state.profile.name || '';
-            state.editProfileBioValue = state.profile.bio || '';
-            state.editProfileAvatarValue = state.profile.avatar || defaultCafeAvatars[0];
-            state.editCustomAvatarSelected = false;
+            syncProfileFormValues();
 
             if (!isOnboarded) {
                 state.showOnboardingModal = true;
@@ -287,6 +284,14 @@
                 navigateTo('FEED');
                 triggerInlineToast('Authorization Succeeded', 'Your table space token has been validated.');
             }
+        }
+
+        function syncProfileFormValues() {
+            state.editProfileNameValue = state.profile.name || '';
+            state.editProfileUsernameValue = state.profile.username || '';
+            state.editProfileBioValue = state.profile.bio || '';
+            state.editProfileAvatarValue = state.profile.avatar || defaultCafeAvatars[0];
+            state.editCustomAvatarSelected = false;
         }
 
         function liveCheckUsernameUniqueness(inputEl) {
@@ -299,9 +304,7 @@
             const inputWrapper = document.getElementById('onboard-username');
 
             if (!cleanedInput) {
-                errorBox.classList.add('hidden');
-                inputWrapper.classList.remove('border-amber-500');
-                inputWrapper.classList.add('border-[#453026]');
+                if(errorBox) errorBox.classList.add('hidden');
                 submitBtn.disabled = true;
                 return;
             }
@@ -324,29 +327,21 @@
             }
 
             if (matchesExisting) {
-                errorBox.classList.remove('hidden');
-                inputWrapper.classList.add('border-amber-500');
-                inputWrapper.classList.remove('border-[#453026]');
-                submitBtn.disabled = true;
-                submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]";
+                if(errorBox) errorBox.classList.remove('hidden');
+                if(inputWrapper) { inputWrapper.classList.add('border-amber-500'); inputWrapper.classList.remove('border-[#453026]'); }
+                if(submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]";
+                }
             } else {
-                errorBox.classList.add('hidden');
-                inputWrapper.classList.remove('border-amber-500');
-                inputWrapper.classList.add('border-[#453026]');
+                if(errorBox) errorBox.classList.add('hidden');
+                if(inputWrapper) { inputWrapper.classList.remove('border-amber-500'); inputWrapper.classList.add('border-[#453026]'); }
                 
                 const currentNameInput = document.getElementById('onboard-name');
-                if (currentNameInput && currentNameInput.value.trim()) {
+                if (currentNameInput && currentNameInput.value.trim() && submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]";
                 }
-            }
-        }
-
-        function liveUpdateNameField(inputEl) {
-            state.onboardingNameValue = inputEl.value;
-            const usernameInput = document.getElementById('onboard-username');
-            if (usernameInput) {
-                liveCheckUsernameUniqueness(usernameInput);
             }
         }
 
@@ -360,29 +355,7 @@
                 return;
             }
 
-            let structuralCollision = false;
-            const currentEmailKey = sanitizeEmailKey(state.currentEmail);
-            for (let i = 0; i < localStorage.length; i++) {
-                const storageKey = localStorage.key(i);
-                if (storageKey.startsWith('anteiku_profile_')) {
-                    if (storageKey === `anteiku_profile_${currentEmailKey}`) continue;
-                    try {
-                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
-                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === chosenUsername.toLowerCase()) {
-                            structuralCollision = true;
-                            break;
-                        }
-                    } catch (ex) {}
-                }
-            }
-
-            if (structuralCollision) {
-                triggerInlineToast('Validation Collision', 'This handle configuration is occupied.');
-                return;
-            }
-
             const emailKey = sanitizeEmailKey(state.currentEmail);
-            
             state.profile.name = chosenName;
             state.profile.username = chosenUsername;
             state.profile.avatar = defaultCafeAvatars[0];
@@ -391,26 +364,52 @@
             localStorage.setItem(`anteiku_onboarded_${emailKey}`, 'true');
             
             state.showOnboardingModal = false;
-            state.editProfileNameValue = chosenName;
-            state.editProfileAvatarValue = defaultCafeAvatars[0];
-
-            executeIncomingNotificationSimulation('follower', null);
-            triggerInlineToast('Profile Configured', 'Your workspace identity nodes have unified successfully.');
+            syncProfileFormValues();
+            triggerInlineToast('Profile Configured', 'Workspace identity nodes unified.');
             navigateTo('FEED');
         }
 
-        function handleUpdateProfileDashboard(e) {
+        // --- EXCLUSIVE MODAL OVERLAY SAVE PROFILE METHOD ---
+        function handleModalProfileUpdate(e) {
             if (e) e.preventDefault();
             const emailKey = sanitizeEmailKey(state.currentEmail);
-            
-            state.profile.name = state.editProfileNameValue.trim() || state.profile.name;
+            const targetUsername = state.editProfileUsernameValue.trim().replace('@', '').toLowerCase();
+
+            if (!state.editProfileNameValue.trim() || !targetUsername) {
+                triggerInlineToast('Validation Fault', 'Fields cannot be left blank.');
+                return;
+            }
+
+            // Uniqueness validation lock check loop
+            let structuralCollision = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_profile_')) {
+                    if (storageKey === `anteiku_profile_${emailKey}`) continue;
+                    try {
+                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
+                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === targetUsername) {
+                            structuralCollision = true;
+                            break;
+                        }
+                    } catch (ex) {}
+                }
+            }
+
+            if (structuralCollision) {
+                triggerInlineToast('Collision Error', 'Username handle is already claimed.');
+                return;
+            }
+
+            state.profile.name = state.editProfileNameValue.trim();
+            state.profile.username = targetUsername;
             state.profile.bio = state.editProfileBioValue.trim();
             state.profile.avatar = state.editProfileAvatarValue;
 
             localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
-
-            state.isEditProfilePanelOpen = false;
-            triggerInlineToast('Ledger Modified', 'Identity parameters updated gracefully across table arrays.');
+            
+            state.isEditProfileModalOpen = false;
+            triggerInlineToast('Identity Saved', 'Global references refreshed across arrays.');
             render();
         }
 
@@ -423,38 +422,13 @@
             navigateTo('LANDING');
         }
 
-        function executeIncomingNotificationSimulation(type, title) {
-            let message = '';
-            if (type === 'like') {
-                message = `A customer liked your article '${title}'.`;
-            } else {
-                message = `A new reader started following your table. Welcome to the workspace, ${state.profile.name}!`;
-                state.profile.followers += 1;
-                const emailKey = sanitizeEmailKey(state.currentEmail);
-                localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
-            }
-            state.notifications.unshift({ id: Date.now(), type, message, unread: true });
-            if (state.currentEmail) {
-                localStorage.setItem(`anteiku_notifications_${sanitizeEmailKey(state.currentEmail)}`, JSON.stringify(state.notifications));
-            }
-        }
-
-        function clearAllNotifications() {
-            state.notifications = state.notifications.map(n => ({ ...n, unread: false }));
-            if (state.currentEmail) {
-                localStorage.setItem(`anteiku_notifications_${sanitizeEmailKey(state.currentEmail)}`, JSON.stringify(state.notifications));
-            }
-            render();
-        }
-
         function handlePublishArticle(e) {
             if (e) e.preventDefault();
             const titleInput = document.getElementById('w-title').value.trim();
-            const subtitleInput = document.getElementById('w-subtitle').value.trim();
             const bodyInput = document.getElementById('w-body').value.trim();
             
             if (!titleInput || !bodyInput) {
-                triggerInlineToast('Validation Error', 'Fields cannot remain unwritten.');
+                triggerInlineToast('Validation Error', 'Content parameters incomplete.');
                 return;
             }
 
@@ -473,7 +447,6 @@
             state.databaseArticles.unshift(newPost);
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
             
-            executeIncomingNotificationSimulation('like', titleInput);
             triggerInlineToast('Article Synchronized', `Dispatched under ${newPost.category}.`);
             navigateTo('ACCOUNT');
         }
@@ -483,6 +456,7 @@
             const app = document.getElementById('app');
             const unreadCount = state.notifications.filter(n => n.unread).length;
 
+            // LANDING / ENTRY WALL
             if (!state.isAuthenticated || state.currentView === 'LANDING') {
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
@@ -498,11 +472,11 @@
                             </div>
                             <form onsubmit="handleSignIn(event)" class="space-y-4 pt-2">
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Cafe ID (Email)</label>
+                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Cafe ID (Email)</label>
                                     <input type="email" required placeholder="writer@anteiku.com" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
                                 </div>
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Security Token</label>
+                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Security Token</label>
                                     <input type="password" required placeholder="••••••••••••" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
                                 </div>
                                 <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-widest transition-all">Validate Access Token</button>
@@ -513,51 +487,44 @@
                 return;
             }
 
+            // ONBOARDING SIGN-IN FLOW MODAL FRAME
             if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
                 const isInitiallyEmpty = !state.onboardingUsernameValue || !state.onboardingNameValue;
-
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
                         <div class="max-w-md w-full space-y-5 z-10 animate-fadeIn bg-[#16100d] border border-[#fbbf24]/60 p-8 rounded-2xl shadow-2xl">
                             <div class="text-center space-y-1">
                                 <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">Welcome to the Café</h2>
-                                <p class="text-xs text-[#f5f0eb]/80 font-light">Let's set up your table profile parameters.</p>
+                                <p class="text-xs text-gray-300 font-light">Set up your initial table identity profiles.</p>
                             </div>
-
                             <form onsubmit="handleOnboardingSubmission(event)" class="space-y-4 pt-1">
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1">Enter your Name</label>
-                                    <input type="text" id="onboard-name" required value="${state.onboardingNameValue}" oninput="liveUpdateNameField(this)" placeholder="e.g. Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1">Enter your Name</label>
+                                    <input type="text" id="onboard-name" required value="${state.onboardingNameValue}" oninput="state.onboardingNameValue=this.value;" placeholder="e.g. Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
                                 </div>
-                                
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1">Choose a Username (handle)</label>
+                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1">Choose a Username (handle)</label>
                                     <div class="relative flex items-center">
                                         <span class="absolute left-4 text-sm font-bold font-mono text-[#fbbf24]">@</span>
                                         <input type="text" id="onboard-username" required value="${state.onboardingUsernameValue}" oninput="liveCheckUsernameUniqueness(this)" placeholder="books_and_brews" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg pl-9 pr-4 py-2 text-sm text-[#f5f0eb] font-mono focus:outline-none transition-colors" />
                                     </div>
                                     <div id="username-error-container" class="mt-1.5 text-xs text-amber-400 font-medium flex items-center gap-1 hidden">
                                         <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
-                                        <span>This username is already taken. Please choose a different handle.</span>
+                                        <span>Handle occupied. Please select an alternative routing route.</span>
                                     </div>
                                 </div>
-
                                 <div class="pt-2">
-                                    <button type="submit" id="onboarding-submit-btn" ${isInitiallyEmpty ? 'disabled' : ''} class="w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg ${isInitiallyEmpty ? 'bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]' : 'bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]'}"">
+                                    <button type="submit" id="onboarding-submit-btn" class="w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#fbbf24] text-[#0c0806] hover:bg-[#d9a21b]">
                                         Let's Go <i data-lucide="chevron-right" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </form>
                         </div>
                     </div>`;
-                lucide.createIcons();
-                const initUserEl = document.getElementById('onboard-username');
-                if (initUserEl && initUserEl.value) {
-                    liveCheckUsernameUniqueness(initUserEl);
-                }
                 return;
             }
 
+            // --- MAIN INTERFACE HOUSING MATRIX ---
             app.innerHTML = `
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
@@ -565,53 +532,40 @@
                         <span class="text-lg font-bold tracking-wider uppercase text-[#fbbf24]">Anteiku Hub</span>
                     </div>
                     
-                    <div class="flex items-center gap-4 relative">
-                        <div class="flex items-center gap-3 px-3 py-1 rounded-lg bg-[#231915] border border-[#2d201a]">
-                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" alt="User Profile" class="w-7 h-7 rounded-md object-cover border border-[#453026]" />
-                            <span class="text-xs font-mono font-medium text-[#fbbf24]">${state.profile.name} (@${state.profile.username})</span>
+                    <div class="flex items-center gap-3 relative">
+                        <button onclick="state.isEditProfileModalOpen=true; syncProfileFormValues(); render();" class="px-3 py-1.5 text-xs font-bold bg-[#fbbf24] text-[#0c0806] hover:bg-[#d9a21b] rounded-lg transition-all flex items-center gap-1.5 shadow-md">
+                            <i data-lucide="user-cog" class="w-3.5 h-3.5"></i> Edit Profile
+                        </button>
+
+                        <div class="flex items-center gap-2.5 px-3 py-1 rounded-lg bg-[#231915] border border-[#2d201a]">
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" alt="" class="w-6 h-6 rounded object-cover border border-[#453026]" />
+                            <span class="text-xs font-mono text-[#fbbf24] max-w-[120px] truncate">${state.profile.name}</span>
                         </div>
 
-                        <div class="relative">
-                            <button onclick="state.isNotificationDropdownOpen=!state.isNotificationDropdownOpen; state.isCategoryDropdownOpen=false; render();" class="relative p-2 text-[#fbbf24] rounded-lg hover:bg-[#231915]">
-                                <i data-lucide="bell" class="w-5 h-5 text-[#fbbf24]"></i>
-                                ${unreadCount > 0 ? `<span class="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#16100d]">${unreadCount}</span>` : ''}
-                            </button>
-
-                            <div class="absolute right-0 mt-3 w-80 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 z-[60] ${state.isNotificationDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
-                                <div class="p-3 bg-[#231915] border-b border-[#2d201a] flex justify-between items-center">
-                                    <h4 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Platform Live Alerts</h4>
-                                    ${unreadCount > 0 ? `<button onclick="clearAllNotifications()" class="text-[10px] text-[#fbbf24] hover:underline uppercase font-bold tracking-wider">Flush</button>` : ''}
-                                </div>
-                                <div class="max-h-64 overflow-y-auto divide-y divide-[#231915]">
-                                    ${state.notifications.length > 0 ? state.notifications.map(n => `
-                                        <div class="p-3.5 text-xs flex items-start gap-2.5 ${n.unread ? 'bg-[#231915]/40 border-l-2 border-[#fbbf24]' : ''}">
-                                            <i data-lucide="bell" class="w-4 h-4 mt-0.5 shrink-0 text-[#fbbf24]"></i>
-                                            <p class="text-[#f5f0eb] font-light leading-relaxed">${n.message}</p>
-                                        </div>`).join('') : `<div class="p-6 text-center text-xs text-gray-400 font-light italic">Your personal workspace is empty.</div>`}
-                                </div>
-                            </div>
-                        </div>
+                        <button onclick="state.isNotificationDropdownOpen=!state.isNotificationDropdownOpen; render();" class="p-2 text-[#fbbf24] rounded-lg hover:bg-[#231915] relative">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            ${unreadCount > 0 ? `<span class="absolute top-1 right-1 bg-red-500 h-2 w-2 rounded-full"></span>` : ''}
+                        </button>
                     </div>
                 </header>
 
                 <div class="flex flex-1 flex-col md:flex-row relative z-10">
                     <aside class="w-full md:w-64 bg-[#16100d]/90 backdrop-blur-sm border-b md:border-b-0 md:border-r border-[#2d201a] p-6 flex flex-col justify-between shrink-0 shadow-2xl">
                         <div class="space-y-4">
-                            <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold px-2">Café Navigation Index</p>
+                            <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold px-2">Menu Directives</p>
                             <nav class="space-y-1">
-                                <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='FEED' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}""><i data-lucide="compass" class="w-4 h-4 text-[#fbbf24]"></i> The Main Lounge</button>
-                                <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}""><i data-lucide="pen-tool" class="w-4 h-4 text-[#fbbf24]"></i> Write Article</button>
-                                <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}""><i data-lucide="shield-check" class="w-4 h-4 text-[#fbbf24]"></i> My Account</button>
+                                <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='FEED' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}"">
+                                    <i data-lucide="compass" class="w-4 h-4 text-[#fbbf24]"></i> Main Lounge
+                                </button>
+                                <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}"">
+                                    <i data-lucide="pen-tool" class="w-4 h-4 text-[#fbbf24]"></i> Write Article
+                                </button>
+                                <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}"">
+                                    <i data-lucide="shield-check" class="w-4 h-4 text-[#fbbf24]"></i> Account Management
+                                </button>
                             </nav>
                         </div>
-                        <div class="space-y-3 pt-6 border-t border-[#231915]">
-                            <div class="flex items-center gap-3 p-2 bg-[#0c0806] rounded-xl border border-[#2d201a]">
-                                <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-10 w-10 object-cover rounded-lg border border-[#453026]" alt="" />
-                                <div class="overflow-hidden">
-                                    <span class="text-xs text-white font-bold block truncate">${state.profile.name}</span>
-                                    <span class="text-[10px] text-[#fbbf24] font-mono block truncate">@${state.profile.username}</span>
-                                </div>
-                            </div>
+                        <div class="pt-6 border-t border-[#231915] space-y-2">
                             <button onclick="handleSignOut()" class="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-400 hover:bg-red-950/20 rounded-lg border border-transparent transition-all"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit Session</button>
                         </div>
                     </aside>
@@ -619,90 +573,103 @@
                     <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden animate-fadeIn" id="view-target"></main>
                 </div>
 
+                ${state.isEditProfileModalOpen ? `
+                <div class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[200] animate-fadeIn">
+                    <div class="bg-[#16100d] border border-[#fbbf24]/60 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
+                        <h3 class="text-lg font-bold text-[#fbbf24] flex items-center gap-2 font-serif"><i data-lucide="user-cog" class="w-5 h-5"></i> Edit Profile Hub Configuration</h3>
+                        
+                        <form onsubmit="handleModalProfileUpdate(event)" class="space-y-4">
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wider text-white block mb-1 font-semibold">Display Name</label>
+                                <input type="text" value="${state.editProfileNameValue}" oninput="state.editProfileNameValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#fbbf24]" required />
+                            </div>
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wider text-white block mb-1 font-semibold">Username Handle</label>
+                                <input type="text" value="${state.editProfileUsernameValue}" oninput="state.editProfileUsernameValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#fbbf24]" required />
+                            </div>
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wider text-white block mb-1 font-semibold">Workspace Bio</label>
+                                <input type="text" value="${state.editProfileBioValue}" oninput="state.editProfileBioValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#fbbf24]" />
+                            </div>
+
+                            <div class="bg-[#0c0806] p-3.5 rounded-xl border border-[#2d201a] space-y-2.5">
+                                <label class="text-xs uppercase tracking-wider text-[#fbbf24] font-bold block">Configure Avatar Photo</label>
+                                <div class="flex items-center gap-3">
+                                    <img src="${state.editProfileAvatarValue}" class="h-12 w-12 rounded-xl object-cover border border-[#fbbf24]/50 shrink-0 bg-[#16100d]" alt="" />
+                                    <div class="flex gap-2">${defaultCafeAvatars.map(url => `
+                                        <div onclick="state.editCustomAvatarSelected=false; state.editProfileAvatarValue='${url}'; render();" class="h-9 w-9 cursor-pointer rounded-lg overflow-hidden border-2 ${state.editProfileAvatarValue===url?'border-[#fbbf24]':'border-transparent opacity-60'}">
+                                            <img src="${url}" class="w-full h-full object-cover" />
+                                        </div>`).join('')}</div>
+                                    </div>
+                                    <input type="url" placeholder="Or parse custom external image URL address..." 
+                                        value="${state.editCustomAvatarSelected ? state.editProfileAvatarValue : ''}"
+                                        oninput="state.editCustomAvatarSelected=true; state.editProfileAvatarValue=this.value; render();" 
+                                        class="w-full bg-[#16100d] border border-[#453026] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#fbbf24]" />
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-2">
+                                <button type="button" onclick="state.isEditProfileModalOpen=false; render();" class="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white transition-colors">Dismiss</button>
+                                <button type="submit" class="px-5 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-md transition-all shadow-md">Apply Alterations</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>` : ''}
+
                 ${state.customToast.show ? `
-                <div class="fixed bottom-6 right-6 z-[120] max-w-sm w-full bg-[#16100d] border border-[#fbbf24]/40 p-4 rounded-xl shadow-2xl flex gap-3 items-start animate-fadeIn">
-                    <div class="space-y-0.5 flex-1">
+                <div class="fixed bottom-6 right-6 z-[250] max-w-sm w-full bg-[#16100d] border border-[#fbbf24]/70 p-4 rounded-xl shadow-2xl flex gap-3 animate-fadeIn">
+                    <div class="space-y-0.5">
                         <h5 class="text-xs uppercase tracking-wider font-bold text-[#fbbf24]">${state.customToast.title}</h5>
-                        <p class="text-xs text-[#f5f0eb] font-light leading-relaxed">${state.customToast.message}</p>
+                        <p class="text-xs text-white font-light leading-relaxed">${state.customToast.message}</p>
                     </div>
                 </div>` : ''}`;
 
             const target = document.getElementById('view-target');
 
-            // --- VIEW A: CENTRAL LOUNGE FEED ---
+            // --- VIEW MODULE 1: MAIN LOUNGE CENTRAL CONTENT FEED ---
             if (state.currentView === 'FEED') {
-                let dropdownMenuOptionsHtml = categories.map(c => `
-                    <button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" 
-                        class="w-full text-left px-4 py-2.5 text-xs font-mono transition-colors flex justify-between items-center ${state.activeFilter === c.id ? 'bg-[#2d201a] text-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}"">
-                        <span>${c.tag} <span class="text-[10px] text-gray-400 ml-1">(${c.label})</span></span>
-                    </button>`).join('');
+                let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) ? state.databaseArticles : [...DEFAULT_LOUNGE_POSTS];
+                let filtered = state.activeFilter === '#All' ? activeSource : activeSource.filter(a => a.category === state.activeFilter);
 
-                // Ensure dynamic validation array safety mapping checks are handled smoothly
-                let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) 
-                    ? state.databaseArticles 
-                    : [...DEFAULT_LOUNGE_POSTS];
-
-                let filtered = state.activeFilter === '#All' 
-                    ? activeSource 
-                    : activeSource.filter(a => a.category === state.activeFilter);
-
-                // 3. MAP THE CARDS VISUALLY IN HIGH-CONTRAST AMBER YELLOW / STEAM WHITE
-                let feedCardsHtml = filtered.map(art => {
-                    const isCurrentUser = (art.author === state.profile.name);
-                    const currentAvatar = isCurrentUser ? (state.profile.avatar || defaultCafeAvatars[0]) : defaultCafeAvatars[1];
-                    const verifiedHandle = art.handle || '@cafe_writer';
-                    
-                    return `
-                    <div class="bg-[#16100d]/90 backdrop-blur-sm border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/40 transition-all duration-300 flex flex-col justify-between shadow-md">
-                        <div>
-                            <div class="flex items-center gap-3 mb-3.5">
-                                <img src="${currentAvatar}" class="w-6 h-6 object-cover rounded border border-[#453026]" alt="" />
-                                <span class="text-xs font-mono font-bold tracking-wider text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded">${art.category}</span>
-                                <span class="text-xs text-gray-400 font-mono">${art.readTime}</span>
-                                <span class="text-xs text-gray-300 ml-auto font-medium">
-                                    By <span class="text-[#fbbf24] font-semibold">${art.author}</span> 
-                                    <span class="text-gray-500 font-mono text-[11px]">(${verifiedHandle})</span>
-                                </span>
-                            </div>
-                            <h2 class="text-xl font-bold mb-2.5 text-[#fbbf24] tracking-wide">${art.title}</h2>
-                            <p class="text-sm text-[#f5f0eb] font-light leading-relaxed">${art.content || art.body}</p>
-                            
-                            <div class="flex items-center gap-4 mt-4 pt-3 border-t border-[#231915] text-[11px] text-gray-400 font-mono">
-                                <span class="flex items-center gap-1 hover:text-amber-400 transition-colors cursor-pointer">
-                                    <i data-lucide="heart" class="w-3.5 h-3.5 text-amber-500"></i> ${art.likes || 12} Likes
-                                </span>
-                                <span class="flex items-center gap-0.5 text-amber-400">
-                                    ${Array(art.rating || 5).fill('<i data-lucide="star" class="w-3 h-3 fill-current"></i>').join('')}
-                                </span>
-                            </div>
+                // 4. MAP CARDS WITH AMBER YELLOW HEADERS AND CRISP STEAM WHITE TEXT
+                let cardsHtml = filtered.map(art => `
+                    <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-[10px] font-mono font-bold uppercase text-[#0c0806] bg-[#fbbf24] px-2 py-0.5 rounded">${art.category}</span>
+                            <span class="text-xs text-gray-400 font-mono ml-1">${art.readTime || '4 min read'}</span>
+                            <span class="text-xs text-gray-200 ml-auto font-medium">By <span class="text-[#fbbf24] font-semibold">${art.author}</span> <span class="text-gray-500 font-mono text-[11px]">(${art.handle || '@writer'})</span></span>
                         </div>
-                    </div>`;
-                }).join('');
+                        <h2 class="text-xl font-bold mb-2.5 text-[#fbbf24] tracking-wide">${art.title}</h2>
+                        <p class="text-sm text-[#f5f0eb] font-light leading-relaxed">${art.content || art.body}</p>
+                        
+                        <div class="flex items-center gap-4 mt-4 pt-3 border-t border-[#231915] text-[11px] text-gray-400 font-mono">
+                            <span class="flex items-center gap-1"><i data-lucide="heart" class="w-3.5 h-3.5 text-amber-500"></i> ${art.likes || 12} Likes</span>
+                            <span class="flex items-center text-amber-400">${Array(art.rating || 5).fill('<i data-lucide="star" class="w-3 h-3 fill-current"></i>').join('')}</span>
+                        </div>
+                    </div>`).join('');
 
                 target.innerHTML = `
-                    <div class="space-y-6">
-                        <div class="border-b border-[#2d201a] pb-4 flex items-center justify-between relative z-40">
-                            <div class="relative">
-                                <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" 
-                                    class="px-4 py-2 rounded-lg text-xs font-bold bg-[#16100d] text-[#f5f0eb] border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2 transition-all">
-                                    <span>Lounge Category: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 text-[#fbbf24]"></i>
-                                </button>
-                                <div class="absolute left-0 mt-2 w-56 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100 animate-fadeIn' : 'opacity-0 scale-95 pointer-events-none'}"">
-                                    ${dropdownMenuOptionsHtml}
-                                </div>
+                    <div class="space-y-5">
+                        <div class="border-b border-[#2d201a] pb-4 flex items-center justify-between z-40 relative">
+                            <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#16100d] text-white border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2">
+                                <span>Filter Stream: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
+                                <i data-lucide="chevron-down" class="w-3 h-3 text-[#fbbf24]"></i>
+                            </button>
+                            <h3 class="text-xs tracking-widest text-[#fbbf24] font-bold uppercase font-serif">Central Review Desk</h3>
+                            
+                            <div class="absolute left-0 mt-9 w-52 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
+                                ${categories.map(c => `<button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" class="w-full text-left px-4 py-2 text-xs font-mono text-white hover:bg-[#231915] hover:text-[#fbbf24] transition-colors">${c.tag}</button>`).join('')}
                             </div>
-                            <h3 class="text-sm font-bold tracking-widest text-[#fbbf24] uppercase font-serif">Central Review Desk</h3>
                         </div>
-                        <div class="grid grid-cols-1 gap-6 pt-1">${feedCardsHtml || '<div class="p-8 text-center text-xs text-gray-400 italic">No matching records.</div>'}</div>
+                        <div class="grid grid-cols-1 gap-5">${cardsHtml || '<p class="text-xs text-gray-400 italic">No matching records found.</p>'}</div>
                     </div>`;
             }
 
+            // --- VIEW MODULE 2: WRITE COMPOSITION UTILITY ---
             else if (state.currentView === 'WRITE') {
                 target.innerHTML = `
                     <div class="space-y-5 max-w-2xl mx-auto">
                         <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl space-y-3">
-                            <h3 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">Assign Article Catalog Stream</h3>
+                            <h3 class="text-xs uppercase tracking-wider font-bold text-white">Assign Stream Category Tag</h3>
                             <div class="flex gap-2 flex-wrap">
                                 ${['Gaming', 'Sports', 'Education', 'News', 'GeneralKnowledge'].map(cat => `
                                     <button onclick="state.writerSelectedCategory='${cat}'; render();" class="px-3 py-1.5 rounded-lg text-xs font-mono border ${state.writerSelectedCategory===cat?'border-[#fbbf24] bg-[#231915] text-[#fbbf24]':'border-[#3c2a22] text-gray-400'}"">#${cat}</button>
@@ -710,98 +677,45 @@
                             </div>
                         </div>
                         <div class="space-y-4">
-                            <input type="text" id="w-title" placeholder="Title your essay..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-2xl font-bold text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                            <textarea id="w-body" rows="8" placeholder="Begin weaving your paragraphs..." class="w-full bg-[#16100d] border border-[#2d201a] rounded-xl p-4 text-sm text-[#f5f0eb] leading-relaxed focus:outline-none focus:border-[#fbbf24] resize-none"></textarea>
+                            <input type="text" id="w-title" placeholder="Title your essay..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-2xl font-bold text-white focus:outline-none focus:border-[#fbbf24]" />
+                            <textarea id="w-body" rows="8" placeholder="Begin weaving your paragraphs..." class="w-full bg-[#16100d] border border-[#2d201a] rounded-xl p-4 text-sm text-white leading-relaxed focus:outline-none focus:border-[#fbbf24] resize-none"></textarea>
                         </div>
-                        <div class="flex justify-end gap-3">
-                            <button onclick="handlePublishArticle(event)" class="px-6 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded-lg tracking-wider uppercase transition-all">Publish Content Node</button>
+                        <div class="flex justify-end">
+                            <button onclick="handlePublishArticle(event)" class="px-6 py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded-lg tracking-wider uppercase transition-all">Publish Content Node</button>
                         </div>
                     </div>`;
             }
 
+            // --- VIEW MODULE 3: ACCOUNT MANAGEMENT & CREATOR DASHBOARD ---
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let dashboardCardsHtml = personalArticles.map(p => `
-                    <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl space-y-1">
-                        <span class="text-[10px] font-mono text-[#fbbf24]">
-                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="inline-block w-3.5 h-3.5 object-cover rounded mr-1" alt="" />
-                            ${p.category}
-                        </span>
-                        <h4 class="text-md font-bold text-white">${p.title}</h4>
-                        <p class="text-xs text-[#f5f0eb]/70 truncate">${p.content || p.body}</p>
+                    <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl space-y-1.5 shadow">
+                        <span class="text-[10px] font-mono text-[#fbbf24] bg-[#231915] px-2 py-0.5 rounded border border-[#3c2a22]">${p.category}</span>
+                        <h4 class="text-sm font-bold text-[#fbbf24] pt-1">${p.title}</h4>
+                        <p class="text-xs text-white font-light line-clamp-2 leading-relaxed">${p.content || p.body}</p>
                     </div>`).join('');
-
-                let editAvatarGridHtml = defaultCafeAvatars.map((url, index) => {
-                    const isSelected = !state.editCustomAvatarSelected && state.editProfileAvatarValue === url;
-                    return `
-                        <div onclick="state.editCustomAvatarSelected=false; state.editProfileAvatarValue='${url}'; render();" class="relative cursor-pointer rounded-xl overflow-hidden border-2 h-12 w-12 transition-all ${isSelected ? 'border-[#fbbf24] scale-105 shadow-md shadow-[#fbbf24]/20' : 'border-[#2d201a] opacity-60 hover:opacity-100'}">
-                            <img src="${url}" alt="Selector ${index + 1}" class="w-full h-full object-cover" />
-                        </div>`;
-                }).join('');
 
                 target.innerHTML = `
                     <div class="space-y-6 max-w-3xl mx-auto">
                         <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-5 shadow-xl">
-                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-20 w-20 rounded-2xl object-cover border-2 border-[#fbbf24]/40 bg-[#0c0806]" alt="" />
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-20 w-20 rounded-2xl object-cover border-2 border-[#fbbf24]/50 bg-[#0c0806]" alt="" />
                             <div class="space-y-1 text-center sm:text-left flex-1">
-                                <div class="flex flex-col sm:flex-row items-center gap-2.5">
-                                    <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">${state.profile.name}</h2>
-                                    <button onclick="state.isEditProfilePanelOpen=!state.isEditProfilePanelOpen; render();" class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-[#231915] text-[#fbbf24] hover:bg-[#2d201a] border border-[#453026] rounded-md transition-all flex items-center gap-1">
-                                        <i data-lucide="settings" class="w-3 h-3"></i> Edit Profile
-                                    </button>
-                                </div>
-                                <p class="text-xs font-mono text-gray-400">Handle Reference: <span class="text-[#fbbf24]">@${state.profile.username}</span></p>
-                                <p class="text-xs text-[#f5f0eb]/90 font-light pt-1">${state.profile.bio}</p>
+                                <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24] font-serif">${state.profile.name}</h2>
+                                <p class="text-xs font-mono text-gray-400">Identity Ledger Handle: <span class="text-[#fbbf24]">@${state.profile.username}</span></p>
+                                <p class="text-xs text-white font-light pt-1.5 leading-relaxed">${state.profile.bio || 'Writing from the corner booth.'}</p>
                             </div>
-                            <div class="px-4 py-2 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center shrink-0">
-                                <span class="text-xs text-gray-400 block font-mono">Followers</span>
-                                <b class="text-xl font-bold text-[#fbbf24]">${state.profile.followers}</b>
+                            
+                            <div class="px-5 py-2.5 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center shrink-0 min-w-[100px]">
+                                <span class="text-[10px] uppercase text-gray-400 block font-mono tracking-wider font-semibold">Total Followers</span>
+                                <b class="text-xl font-bold text-[#fbbf24]">${state.profile.followers || 0}</b>
                             </div>
                         </div>
 
-                        ${state.isEditProfilePanelOpen ? `
-                        <div class="bg-[#16100d] border border-[#fbbf24]/50 p-6 rounded-2xl space-y-4 animate-fadeIn">
-                            <h3 class="text-xs uppercase tracking-wider font-bold text-[#fbbf24] flex items-center gap-2"><i data-lucide="user-cog" class="w-4 h-4"></i> Adjust Profile Settings</h3>
-                            <form onsubmit="handleUpdateProfileDashboard(event)" class="space-y-4">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="text-[11px] uppercase tracking-wider text-gray-300 block mb-1 font-semibold">Change Display Name</label>
-                                        <input type="text" value="${state.editProfileNameValue}" oninput="state.editProfileNameValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                    </div>
-                                    <div>
-                                        <label class="text-[11px] uppercase tracking-wider text-gray-300 block mb-1 font-semibold">Short Bio Description</label>
-                                        <input type="text" value="${state.editProfileBioValue}" oninput="state.editProfileBioValue=this.value;" placeholder="Tell us about your desk..." class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                    </div>
-                                </div>
-
-                                <div class="bg-[#0c0806] p-4 rounded-xl border border-[#2d201a] space-y-3">
-                                    <label class="text-xs uppercase tracking-wider text-[#fbbf24] font-bold block">Modify Profile Picture (PFP)</label>
-                                    <div class="flex items-center gap-4">
-                                        <div class="h-14 w-14 rounded-xl border-2 border-[#fbbf24]/40 overflow-hidden bg-[#16100d] shrink-0">
-                                            <img id="edit-avatar-preview" src="${state.editProfileAvatarValue}" class="w-full h-full object-cover" alt="" />
-                                        </div>
-                                        <div class="flex gap-2 flex-wrap">${editAvatarGridHtml}</div>
-                                    </div>
-                                    <div class="pt-1">
-                                        <span class="text-[10px] uppercase text-gray-400 block font-semibold mb-1">Or input custom external avatar link URL:</span>
-                                        <input type="url" placeholder="https://example.com/custom-pfp.jpg" 
-                                            value="${state.editCustomAvatarSelected ? state.editProfileAvatarValue : ''}"
-                                            oninput="state.editCustomAvatarSelected=true; state.editProfileAvatarValue=this.value; document.getElementById('edit-avatar-preview').src=this.value;" 
-                                            class="w-full bg-[#16100d] border border-[#453026] rounded-lg px-3 py-1.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                    </div>
-                                </div>
-
-                                <div class="flex justify-end gap-2 pt-1">
-                                    <button type="button" onclick="state.isEditProfilePanelOpen=false; render();" class="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white transition-colors">Cancel</button>
-                                    <button type="submit" class="px-5 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-md shadow-md transition-all">Save Changes</button>
-                                </div>
-                            </form>
-                        </div>` : ''}
-
                         <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-xl space-y-4">
-                            <h3 class="text-xs uppercase tracking-wider font-bold text-[#fbbf24] border-b border-[#2d201a] pb-2">Your Published Literary Ledger Entries</h3>
+                            <h3 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] border-b border-[#2d201a] pb-2 flex items-center gap-1.5"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> My Published Posts</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                ${dashboardCardsHtml || '<p class="text-xs text-gray-400 italic p-4">No content ledger entries published under this account token block.</p>'}
+                                ${dashboardCardsHtml || '<p class="text-xs text-gray-400 italic p-4 col-span-2 text-center">No articles written by this table token node yet.</p>'}
                             </div>
                         </div>
                     </div>`;
