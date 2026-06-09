@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anteiku Hub - Digital Literary Café</title>
+    <!-- Tailwind CSS Engine -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #120c0a; color: #f5f0eb; font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .serif-font { font-family: 'Cinzel', serif; color: #fddcb5; }
+        /* Smooth Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a120f; }
+        ::-webkit-scrollbar-thumb { background: #36251e; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c8a27c; }
+    </style>
+</head>
+<body class="min-h-screen selection:bg-[#c8a27c]/30 selection:text-[#fddcb5]">
+
+    <div id="app"></div>
+
+    <script>
+        // --- APPLICATION STATE ---
+        let state = {
+            currentView: 'LANDING', // LANDING, FEED, PROFILE, WRITE, READER
+            profile: {
+                name: 'Ken Kaneki',
+                username: 'books_and_brews',
+                bio: 'Lover of tragic short stories and slow drip pour-overs. Writing from the corner booth.'
+            },
+            activeCategory: 'All Categories',
+            selectedBeanRating: 4,
+            activeAmbientTrack: null
+        };
+
+        const categories = ['All Categories', 'Trending', 'Philosophy', 'Fiction', 'Poetry', 'Essays'];
+        const articles = [
+            { id: '1', title: 'The Architecture of Solitude', subtitle: 'On the structural necessity of quiet corners in the modern web.', readTime: '8 min read', category: 'Philosophy', snippet: 'To step inside a true workspace is to close the door on immediate updates. We examine how minimalist platforms change cognitive depth...' },
+            { id: '2', title: 'Sipping Ink', subtitle: 'A compilation of verse written between midnights.', readTime: '4 min read', category: 'Poetry', snippet: 'The steam rises from porcelain basins, holding shapes of forgotten phrases before they dissolve into dark roasts...' },
+            { id: '3', title: 'The Coffee Bean Chronicles', subtitle: 'Historical allegories disguised as casual counter discussions.', readTime: '12 min read', category: 'Fiction', snippet: 'He sat at the end of the long mahogany bar every Tuesday evening, never ordering, simply adjusting his glasses...' }
+        ];
+
+        // --- ROUTER ENGINE ---
+        function setView(view) {
+            state.currentView = view;
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- RENDER APP ---
+        function render() {
+            const app = document.getElementById('app');
+            
+            // 1. LANDING VIEW
+            if (state.currentView === 'LANDING') {
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-6 text-center relative overflow-hidden">
+                        <div class="max-w-2xl space-y-8 z-10">
+                            <div class="flex justify-center">
+                                <div class="p-4 bg-[#1a120f] border border-[#36251e] rounded-full shadow-xl">
+                                    <i data-lucide="coffee" class="w-12 h-12 text-[#c8a27c]"></i>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <h1 class="text-5xl md:text-6xl font-bold tracking-tight">Anteiku Hub</h1>
+                                <p class="text-xl md:text-2xl text-[#c8a27c] italic serif-font">Read deeply. Write freely.</p>
+                            </div>
+                            <p class="text-base text-[#a38a75] max-w-lg mx-auto font-light leading-relaxed">
+                                Welcome to the digital literary café. Step away from the noise of transient feeds into a quiet, warm environment designed exclusively for deliberate long-form writing.
+                            </p>
+                            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+                                <button onclick="setView('FEED')" class="w-48 px-6 py-3.5 bg-[#2d1e18] hover:bg-[#36251e] text-[#fddcb5] border border-[#4a3329] rounded-md font-medium tracking-wide transition-all">Step Inside</button>
+                                <button onclick="setView('FEED')" class="w-48 px-6 py-3.5 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#120c0a] rounded-md font-semibold tracking-wide transition-all">Pull Up a Chair</button>
+                            </div>
+                        </div>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            // AUTHENTICATED SYSTEM WRAPPER
+            app.innerHTML = `
+                <div class="min-h-screen flex flex-col bg-[#120c0a]">
+                    <!-- Header -->
+                    <header class="sticky top-0 z-50 bg-[#1a120f]/90 backdrop-blur-md border-b border-[#2d1e18] px-6 py-4 flex justify-between items-center">
+                        <div onclick="setView('FEED')" class="flex items-center gap-3 cursor-pointer">
+                            <i data-lucide="coffee" class="w-5 h-5 text-[#c8a27c]"></i>
+                            <span class="text-lg font-bold tracking-wider uppercase serif-font text-[#fddcb5]">Anteiku Hub</span>
+                        </div>
+                        <button onclick="setView('PROFILE')" class="text-xs tracking-wider uppercase font-semibold text-[#c8a27c] hover:text-[#fddcb5] border border-[#36251e] px-4 py-2 rounded-md hover:bg-[#1e1411] transition-all">
+                            Edit Profile
+                        </button>
+                    </header>
+
+                    <!-- Main Grid Split -->
+                    <div class="flex flex-1 flex-col md:flex-row">
+                        <!-- Sidebar -->
+                        <aside class="w-full md:w-64 bg-[#1a120f] border-r border-[#2d1e18] p-6 flex flex-col justify-between">
+                            <div class="space-y-1">
+                                <p class="text-xs uppercase tracking-widest text-[#a38a75] font-semibold mb-4 px-3">Navigation</p>
+                                <button onclick="setView('FEED')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm text-[#a38a75] hover:text-[#f5f0eb] ${state.currentView==='FEED' ? 'bg-[#2d1e18] !text-[#fddcb5] border-l-2 border-[#c8a27c]' : ''}">
+                                    <i data-lucide="compass" class="w-4 h-4"></i> The Main Lounge
+                                </button>
+                                <button onclick="setView('WRITE')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm text-[#a38a75] hover:text-[#f5f0eb] ${state.currentView==='WRITE' ? 'bg-[#2d1e18] !text-[#fddcb5] border-l-2 border-[#c8a27c]' : ''}">
+                                    <i data-lucide="pen-tool" class="w-4 h-4"></i> Write Article
+                                </button>
+                                <button onclick="setView('COMMUNITY')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm text-[#a38a75] hover:text-[#f5f0eb] ${state.currentView==='COMMUNITY' ? 'bg-[#2d1e18] !text-[#fddcb5] border-l-2 border-[#c8a27c]' : ''}">
+                                    <i data-lucide="users" class="w-4 h-4"></i> The Community
+                                </button>
+                                <button onclick="setView('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm text-[#a38a75] hover:text-[#f5f0eb] ${state.currentView==='ACCOUNT' ? 'bg-[#2d1e18] !text-[#fddcb5] border-l-2 border-[#c8a27c]' : ''}">
+                                    <i data-lucide="settings" class="w-4 h-4"></i> Account Settings
+                                </button>
+                            </div>
+                        </aside>
+
+                        <!-- Dynamic Screen Target Container -->
+                        <main class="flex-1 p-8 max-w-5xl mx-auto w-full" id="view-target">
+                        </main>
+                    </div>
+                </div>`;
+
+            const target = document.getElementById('view-target');
+
+            // 2. MAIN FEED SCREEN
+            if (state.currentView === 'FEED') {
+                let categoryTags = categories.map(cat => `
+                    <button onclick="state.activeCategory='${cat}'; render();" class="px-4 py-1.5 rounded-full text-xs font-medium tracking-wide whitespace-nowrap transition-all ${state.activeCategory===cat ? 'bg-[#c8a27c] text-[#120c0a]' : 'bg-[#1a120f] text-[#a38a75] border border-[#2d1e18]'};">
+                        ${cat}
+                    </button>`).join('');
+
+                let filtered = state.activeCategory === 'All Categories' || state.activeCategory === 'Trending' 
+                    ? articles : articles.filter(a => a.category === state.activeCategory);
+
+                let articleCards = filtered.map(art => `
+                    <div onclick="setView('READER')" class="group bg-[#1a120f] border border-[#2d1e18] p-6 rounded-xl hover:border-[#4a3329] transition-all cursor-pointer flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-xs uppercase font-semibold tracking-wider text-[#c8a27c] bg-[#2d1e18] px-2.5 py-0.5 rounded">${art.category}</span>
+                                <span class="text-xs text-[#a38a75] flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${art.readTime}</span>
+                            </div>
+                            <h2 class="text-2xl font-bold mb-2 group-hover:text-[#fddcb5] transition-colors">${art.title}</h2>
+                            <p class="font-serif italic text-sm text-[#c8a27c] mb-3">${art.subtitle}</p>
+                            <p class="text-sm text-[#a38a75] font-light line-clamp-2 leading-relaxed">${art.snippet}</p>
+                        </div>
+                    </div>`).join('');
+
+                target.innerHTML = `
+                    <div class="space-y-8">
+                        <div class="border-b border-[#2d1e18] pb-4 flex gap-2 overflow-x-auto">${categoryTags}</div>
+                        <div class="grid grid-cols-1 gap-6">${articleCards || '<p class="text-xs text-[#a38a75] font-serif italic">No entries inside this booth tag yet.</p>'}</div>
+                    </div>`;
+            }
+
+            // 3. PROFILE SCREEN
+            else if (state.currentView === 'PROFILE') {
+                target.innerHTML = `
+                    <div class="max-w-md mx-auto space-y-8 animate-fadeIn">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-24 h-24 rounded-full bg-[#2d1e18] border-2 border-[#c8a27c] flex items-center justify-center text-2xl font-serif text-[#fddcb5]">KK</div>
+                            <span class="mt-2 text-xs text-[#c8a27c] hover:underline cursor-pointer">Change profile photo</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs uppercase text-[#a38a75] font-semibold block mb-1">Display Name</label>
+                                <input type="text" value="${state.profile.name}" class="w-full bg-[#1a120f] border border-[#2d1e18] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c]" />
+                            </div>
+                            <div>
+                                <label class="text-xs uppercase text-[#a38a75] font-semibold block mb-1">Username</label>
+                                <input type="text" value="@${state.profile.username}" class="w-full bg-[#1a120f] border border-[#2d1e18] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c]" />
+                            </div>
+                            <div>
+                                <label class="text-xs uppercase text-[#a38a75] font-semibold block mb-1">Bio</label>
+                                <textarea class="w-full bg-[#1a120f] border border-[#2d1e18] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c] resize-none" rows="3">${state.profile.bio}</textarea>
+                            </div>
+                            <button onclick="alert('Profile Saved Successfully!'); setView('FEED');" class="w-full py-2.5 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#120c0a] rounded-lg font-medium text-sm transition-all">Save Profile Changes</button>
+                        </div>
+                    </div>`;
+            }
+
+            // 4. WRITE SCREEN
+            else if (state.currentView === 'WRITE') {
+                target.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                        <div class="lg:col-span-2 space-y-6">
+                            <input type="text" placeholder="Title your composition..." class="w-full bg-transparent border-b border-[#2d1e18] pb-3 text-3xl font-bold text-[#fddcb5] focus:outline-none focus:border-[#c8a27c]" />
+                            <textarea rows="10" placeholder="Begin writing your narrative here..." class="w-full bg-[#1a120f] border border-[#2d1e18] rounded-xl p-6 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c] resize-none"></textarea>
+                            <div class="flex justify-end gap-3">
+                                <button onclick="setView('FEED')" class="px-5 py-2 bg-[#c8a27c] text-[#120c0a] text-xs font-semibold rounded">Publish Entry</button>
+                            </div>
+                        </div>
+                        <aside class="bg-[#1a120f] border border-[#2d1e18] rounded-xl p-5 space-y-4">
+                            <h3 class="text-sm font-bold text-[#fddcb5] flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-[#c8a27c]"></i> AI Barista Bot</h3>
+                            <p class="text-xs text-[#a38a75]">Click consult below to layout an optimal configuration framework scheme.</p>
+                            <button onclick="document.getElementById('ai-box').innerText='☕ Barista Proposal Outline:\\n1. Context Setup: Describe ambient conditions.\\n2. Core Argument: Detail the internal friction.\\n3. Resolution: Close on structural reflection.';" class="w-full py-2 bg-[#2d1e18] text-[#fddcb5] text-xs font-medium rounded border border-[#4a3329]">Consult Barista</button>
+                            <div id="ai-box" class="bg-[#120c0a] border border-[#2d1e18] rounded p-3 text-[11px] text-[#a38a75] font-mono whitespace-pre-line">Awaiting prompt instructions...</div>
+                        </aside>
+                    </div>`;
+            }
+
+            // 5. READER SCREEN
+            else if (state.currentView === 'READER') {
+                let beansHtml = '';
+                for(let i=1; i<=5; i++) {
+                    beansHtml += `<i data-lucide="coffee" onclick="state.selectedBeanRating=${i}; render();" class="w-6 h-6 cursor-pointer transition-colors ${i <= state.selectedBeanRating ? 'text-[#c8a27c] fill-[#c8a27c]' : 'text-[#36251e]'}"></i>`;
+                }
+
+                target.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                        <div class="lg:col-span-3 space-y-6 bg-[#1a120f]/40 border border-[#2d1e18]/60 p-8 rounded-2xl">
+                            <h1 class="text-4xl font-bold">The Architecture of Solitude</h1>
+                            <p class="font-serif italic text-lg text-[#c8a27c]">On the structural necessity of quiet corners in the modern web.</p>
+                            <hr class="border-[#2d1e18]" />
+                            <div class="text-base text-[#f5f0eb]/90 font-light space-y-4 leading-relaxed">
+                                <p>To step inside a true workspace is to close the door on immediate updates. The current velocity of the internet encourages reactions over reflection, demanding constant attention.</p>
+                                <p>When we build platforms that treat reading as an artisanal process rather than high-throughput consumption, we modify the cognitive architecture. A long-form essay is an aesthetic conversation over an espresso.</p>
+                            </div>
+                            <div class="mt-8 p-6 bg-[#1a120f] border border-[#2d1e18] rounded-xl space-y-3">
+                                <h4 class="text-xs uppercase font-semibold text-[#a38a75]">Rate this Brew</h4>
+                                <div class="flex gap-2">${beansHtml}</div>
+                            </div>
+                        </div>
+                        <aside class="bg-[#1a120f] border border-[#2d1e18] rounded-xl p-5 space-y-4">
+                            <h3 class="text-sm font-bold text-[#fddcb5] flex items-center gap-2"><i data-lucide="music" class="w-4 h-4 text-[#c8a27c]"></i> Side Order</h3>
+                            <p class="text-xs text-[#a38a75]">Toggle environmental background sounds.</p>
+                            <button onclick="state.activeAmbientTrack = state.activeAmbientTrack ? null : 'Rain'; render();" class="w-full py-2 bg-[#120c0a] border border-[#2d1e18] text-xs flex justify-between items-center px-3 rounded text-[#f5f0eb]">
+                                <span>Café Rain Deck</span>
+                                <i data-lucide="${state.activeAmbientTrack==='Rain'?'pause':'play'}" class="w-3.5 h-3.5 text-[#c8a27c]"></i>
+                            </button>
+                        </aside>
+                    </div>`;
+            }
+
+            // 6. BLANK PLACEHOLDERS
+            else {
+                target.innerHTML = `<div class="p-8 text-center text-[#a38a75] border border-dashed border-[#2d1e18] rounded-xl font-serif italic">This corner of the café lounge view is currently under construction.</div>`;
+            }
+
+            lucide.createIcons();
+        }
+
+        // Boot Up View Initializer
+        render();
+    </script>
+</body>
+</html>
