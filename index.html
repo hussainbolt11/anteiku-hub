@@ -220,8 +220,7 @@
                 customToast: { show: false, title: '', message: '' },
                 showRewardModal: false,
                 
-                // Onboarding validation and profile state registers
-                onboardingError: false,
+                // Volatile inputs preserved during session setup
                 onboardingNameValue: profile.name || '',
                 onboardingUsernameValue: profile.username || '',
                 onboardingAvatarValue: profile.avatar || defaultCafeAvatars[0],
@@ -300,7 +299,6 @@
             const savedNotifications = localStorage.getItem(`anteiku_notifications_${emailKey}`);
             state.notifications = savedNotifications ? JSON.parse(savedNotifications) : [];
 
-            state.onboardingError = false;
             state.onboardingNameValue = state.profile.name || '';
             state.onboardingUsernameValue = state.profile.username || '';
             state.onboardingAvatarValue = state.profile.avatar || defaultCafeAvatars[0];
@@ -316,13 +314,22 @@
             }
         }
 
-        function checkUsernameUniqueness(val) {
-            const cleanedInput = val.trim().replace('@', '').toLowerCase();
+        // OPTIMIZED ISOLATED LIVE UNIQUE CHECK ENGINE (NO RENDER INTERRUPTIONS)
+        function liveCheckUsernameUniqueness(inputEl) {
+            const rawVal = inputEl.value;
+            const cleanedInput = rawVal.trim().replace('@', '').toLowerCase();
             state.onboardingUsernameValue = cleanedInput;
 
+            const errorBox = document.getElementById('username-error-container');
+            const submitBtn = document.getElementById('onboarding-submit-btn');
+            const inputWrapper = document.getElementById('onboard-username');
+
             if (!cleanedInput) {
-                state.onboardingError = false;
-                render();
+                errorBox.classList.add('hidden');
+                inputWrapper.classList.remove('border-amber-500');
+                inputWrapper.classList.add('border-[#453026]');
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]";
                 return;
             }
 
@@ -343,14 +350,39 @@
                 }
             }
 
-            state.onboardingError = matchesExisting;
-            render();
+            if (matchesExisting) {
+                errorBox.classList.remove('hidden');
+                inputWrapper.classList.add('border-amber-500');
+                inputWrapper.classList.remove('border-[#453026]');
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]";
+            } else {
+                errorBox.classList.add('hidden');
+                inputWrapper.classList.remove('border-amber-500');
+                inputWrapper.classList.add('border-[#453026]');
+                
+                // Reactive check for Name input validity before enabling layout button elements
+                const currentNameInput = document.getElementById('onboard-name');
+                if (currentNameInput && currentNameInput.value.trim()) {
+                    submitBtn.disabled = false;
+                    submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]";
+                }
+            }
+        }
+
+        // Live track non-critical text modifications inside Name values without blur glitches
+        function liveUpdateNameField(inputEl) {
+            state.onboardingNameValue = inputEl.value;
+            const usernameInput = document.getElementById('onboard-username');
+            if (usernameInput) {
+                liveCheckUsernameUniqueness(usernameInput);
+            }
         }
 
         function handleOnboardingSubmission(e) {
             if (e) e.preventDefault();
             const chosenName = document.getElementById('onboard-name').value.trim();
-            const chosenUsername = state.onboardingUsernameValue;
+            const chosenUsername = state.onboardingUsernameValue.trim();
             
             let finalAvatar = state.onboardingAvatarValue;
             if (state.customAvatarSelected) {
@@ -358,8 +390,30 @@
                 if (customUrl) finalAvatar = customUrl;
             }
 
-            if (state.onboardingError || !chosenName || !chosenUsername) {
-                triggerInlineToast('Validation Error', 'Please clear profile parameters before proceeding.');
+            if (!chosenName || !chosenUsername) {
+                triggerInlineToast('Validation Error', 'Fields cannot remain unwritten.');
+                return;
+            }
+
+            // Final safety loop inspection lock check
+            let structuralCollision = false;
+            const currentEmailKey = sanitizeEmailKey(state.currentEmail);
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_profile_')) {
+                    if (storageKey === `anteiku_profile_${currentEmailKey}`) continue;
+                    try {
+                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
+                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === chosenUsername.toLowerCase()) {
+                            structuralCollision = true;
+                            break;
+                        }
+                    } catch (ex) {}
+                }
+            }
+
+            if (structuralCollision) {
+                triggerInlineToast('Validation Collision', 'This handle configuration is occupied.');
                 return;
             }
 
@@ -477,9 +531,10 @@
                 return;
             }
 
-            // --- USER ONBOARDING WITH VALIDATION AND AVATAR OPTION SELECTION ---
+            // --- USER ONBOARDING WITH STABLE DOM INPUT CHANNELS ---
             if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
-                const isFormInvalid = state.onboardingError || !state.onboardingUsernameValue || !state.onboardingNameValue;
+                // Pre-verify initial state validation parameters for setup layout rendering metrics
+                const isInitiallyEmpty = !state.onboardingUsernameValue || !state.onboardingNameValue;
                 
                 let avatarGridHtml = defaultCafeAvatars.map((url, index) => {
                     const isSelected = !state.customAvatarSelected && state.onboardingAvatarValue === url;
@@ -491,7 +546,7 @@
 
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
-                        <div class="max-w-md w-full space-y-5 z-10 animate-fadeIn bg-[#16100d] border ${state.onboardingError ? 'border-amber-500' : 'border-[#fbbf24]/60'} p-8 rounded-2xl shadow-2xl transition-colors">
+                        <div class="max-w-md w-full space-y-5 z-10 animate-fadeIn bg-[#16100d] border border-[#fbbf24]/60 p-8 rounded-2xl shadow-2xl">
                             <div class="text-center space-y-1">
                                 <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">Welcome to the Café</h2>
                                 <p class="text-xs text-[#f5f0eb]/80 font-light">Let's set up your table profile parameters.</p>
@@ -500,20 +555,20 @@
                             <form onsubmit="handleOnboardingSubmission(event)" class="space-y-4 pt-1">
                                 <div>
                                     <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1">Enter your Name</label>
-                                    <input type="text" id="onboard-name" required value="${state.onboardingNameValue}" oninput="state.onboardingNameValue = this.value; render();" placeholder="e.g. Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                    <input type="text" id="onboard-name" required value="${state.onboardingNameValue}" oninput="liveUpdateNameField(this)" placeholder="e.g. Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
                                 </div>
                                 
                                 <div>
                                     <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1">Choose a Username (handle)</label>
                                     <div class="relative flex items-center">
                                         <span class="absolute left-4 text-sm font-bold font-mono text-[#fbbf24]">@</span>
-                                        <input type="text" id="onboard-username" required value="${state.onboardingUsernameValue}" oninput="checkUsernameUniqueness(this.value)" placeholder="books_and_brews" class="w-full bg-[#0c0806] border ${state.onboardingError ? 'border-amber-500' : 'border-[#453026]'} rounded-lg pl-9 pr-4 py-2 text-sm text-[#f5f0eb] font-mono focus:outline-none" />
+                                        <input type="text" id="onboard-username" required value="${state.onboardingUsernameValue}" oninput="liveCheckUsernameUniqueness(this)" placeholder="books_and_brews" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg pl-9 pr-4 py-2 text-sm text-[#f5f0eb] font-mono focus:outline-none transition-colors" />
                                     </div>
-                                    ${state.onboardingError ? `
-                                    <div class="mt-1.5 text-xs text-amber-400 font-medium flex items-center gap-1">
+                                    
+                                    <div id="username-error-container" class="mt-1.5 text-xs text-amber-400 font-medium flex items-center gap-1 hidden">
                                         <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
                                         <span>This username is already taken. Please choose a different handle.</span>
-                                    </div>` : ''}
+                                    </div>
                                 </div>
 
                                 <div class="bg-[#0c0806] p-3 rounded-xl border border-[#2d201a] space-y-3">
@@ -521,7 +576,7 @@
                                     
                                     <div class="flex items-center gap-3">
                                         <div class="h-14 w-14 rounded-xl border border-[#453026] overflow-hidden bg-[#16100d] shrink-0">
-                                            <img id="avatar-preview" src="${state.customAvatarSelected ? (state.onboardingAvatarValue || defaultCafeAvatars[0]) : state.onboardingAvatarValue}" class="w-full h-full object-cover" alt="Profile Preview" />
+                                            <img id="avatar-preview" src="${state.onboardingAvatarValue}" class="w-full h-full object-cover" alt="Profile Preview" />
                                         </div>
                                         <div class="flex gap-2 flex-wrap">${avatarGridHtml}</div>
                                     </div>
@@ -530,13 +585,13 @@
                                         <span class="text-[10px] uppercase text-gray-400 block font-semibold mb-1">Or provide external custom picture image link URL:</span>
                                         <input type="url" id="onboard-custom-avatar" placeholder="https://example.com/image.jpg" 
                                             value="${state.customAvatarSelected ? state.onboardingAvatarValue : ''}"
-                                            oninput="state.customAvatarSelected=true; state.onboardingAvatarValue=this.value; render();" 
+                                            oninput="state.customAvatarSelected=true; state.onboardingAvatarValue=this.value; document.getElementById('avatar-preview').src=this.value;" 
                                             class="w-full bg-[#16100d] border border-[#453026] rounded-lg px-3 py-1.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
                                     </div>
                                 </div>
 
                                 <div class="pt-1">
-                                    <button type="submit" ${isFormInvalid ? 'disabled' : ''} class="w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg ${isFormInvalid ? 'bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]' : 'bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]'}"">
+                                    <button type="submit" id="onboarding-submit-btn" ${isInitiallyEmpty ? 'disabled' : ''} class="w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg ${isInitiallyEmpty ? 'bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]' : 'bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]'}"">
                                         Let's Go <i data-lucide="chevron-right" class="w-4 h-4"></i>
                                     </button>
                                 </div>
@@ -544,10 +599,16 @@
                         </div>
                     </div>`;
                 lucide.createIcons();
+                
+                // Immediately check field state inside DOM initialization loop to set initial validation views correctly
+                const initUserEl = document.getElementById('onboard-username');
+                if (initUserEl && initUserEl.value) {
+                    liveCheckUsernameUniqueness(initUserEl);
+                }
                 return;
             }
 
-            // --- PLATFORM BASE STRUCTURAL HOUSING (INJECTING VISUAL AVATARS) ---
+            // --- PLATFORM BASE STRUCTURAL HOUSING ---
             app.innerHTML = `
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
@@ -619,7 +680,7 @@
 
             const target = document.getElementById('view-target');
 
-            // --- ROUTING MATRIX VIEW A: CENTRAL LOUNGE (WITH FULLY RESTORED 5 SAMPLE ESSAYS) ---
+            // --- VIEW A: CENTRAL LOUNGE FEED ---
             if (state.currentView === 'FEED') {
                 let dropdownMenuOptionsHtml = categories.map(c => `
                     <button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" 
@@ -664,7 +725,7 @@
                     </div>`;
             }
 
-            // --- ROUTING MATRIX VIEW B: WRITE COMPOSITION SCREEN ---
+            // --- VIEW B: WRITE COMPOSITION SCREEN ---
             else if (state.currentView === 'WRITE') {
                 target.innerHTML = `
                     <div class="space-y-5 max-w-2xl mx-auto">
@@ -687,7 +748,7 @@
                     </div>`;
             }
 
-            // --- ROUTING MATRIX VIEW C: MY ACCOUNT ACCOUNT PLATFORM VIEWER ---
+            // --- VIEW C: MY ACCOUNT VIEWER ---
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let dashboardCardsHtml = personalArticles.map(p => `
@@ -700,7 +761,7 @@
                 target.innerHTML = `
                     <div class="space-y-6 max-w-3xl mx-auto">
                         <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-5 shadow-xl">
-                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-20 w-20 rounded-2xl object-cover border-2 border-[#fbbf24]/40 bg-[#0c0806]" alt="Account Management Identity Profile Panel image" />
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-20 w-20 rounded-2xl object-cover border-2 border-[#fbbf24]/40 bg-[#0c0806]" alt="Account Identity Profile Frame" />
                             <div class="space-y-1 text-center sm:text-left flex-1">
                                 <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">${state.profile.name}</h2>
                                 <p class="text-xs font-mono text-gray-400">Handle Reference: <span class="text-[#fbbf24]">@${state.profile.username}</span></p>
