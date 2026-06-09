@@ -3,351 +3,789 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Espresso Archive</title>
+    <title>Anteiku Hub - Digital Literary Café</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght=500;700&family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         body { 
+            /* SMOKY BACKGROUND GRADIENT */
+            background: radial-gradient(circle at 50% 40%, #16110f 0%, #0c0806 70%);
+            background-color: #0c0806; 
+            color: #f5f0eb; 
             font-family: 'Inter', sans-serif; 
-            background-color: #0c0806;
+        }
+        h1, h2, h3, h4, h5, h6, .cafe-header { 
+            font-family: 'Cinzel', serif; 
+            color: #fbbf24; 
+        }
+        
+        /* Espresso Theme Custom Scrollbar Overrides */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #16100d; }
+        ::-webkit-scrollbar-thumb { background: #453026; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
+        
+        /* Hardware Accelerated UI Animations */
+        .animate-fadeIn {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98) translateY(4px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .coffee-bounce {
+            animation: bounceSlow 2s infinite ease-in-out;
         }
 
-        /* 4. KEEP THE SMOKY CAFE AMBIANCE (DEEP ESPRESSO GRADIENT & STEAM LINES) */
-        .cafe-gradient {
-            background: linear-gradient(135deg, #0c0806 0%, #16110f 100%);
-        }
-
-        @keyframes steam-rise {
-            0% { transform: translateY(100%) scaleX(1); opacity: 0; }
-            15% { opacity: 0.06; }
-            50% { transform: translateY(50%) scaleX(1.2); opacity: 0.04; }
-            85% { opacity: 0.02; }
-            100% { transform: translateY(-20%) scaleX(0.8); opacity: 0; }
+        /* THE STEAM EFFECT & MOVEMENT RULES */
+        @keyframes wavy-smoke-drift {
+            0% {
+                transform: translateY(100vh) translateX(0) scaleX(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.04;
+            }
+            40% {
+                transform: translateY(50vh) translateX(25px) scaleX(1.2);
+                opacity: 0.05;
+            }
+            70% {
+                transform: translateY(20vh) translateX(-20px) scaleX(0.9);
+                opacity: 0.02;
+            }
+            100% {
+                transform: translateY(-20vh) translateX(10px) scaleX(1.1);
+                opacity: 0;
+            }
         }
 
         .steam-line {
             position: absolute;
-            width: 2px;
-            height: 350px;
-            background: linear-gradient(to top, transparent, #f4f1ee, transparent);
-            pointer-events: none;
+            bottom: 0;
+            fill: none;
+            stroke: #fbbf24; /* Muted yellow/amber steam to cast a warm glow */
+            stroke-width: 2;
+            stroke-linecap: round;
             opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
         }
-        .steam-1 { left: 15%; animation: steam-rise 7s infinite linear; }
-        .steam-2 { left: 50%; animation: steam-rise 9s infinite linear; animation-delay: 2s; }
-        .steam-3 { left: 80%; animation: steam-rise 8s infinite linear; animation-delay: 4.5s; }
+
+        .steam-1 {
+            left: 25%;
+            animation: wavy-smoke-drift 14s infinite linear;
+        }
+        .steam-2 {
+            left: 55%;
+            animation: wavy-smoke-drift 18s infinite linear;
+            animation-delay: 4s;
+        }
+        .steam-3 {
+            left: 78%;
+            animation: wavy-smoke-drift 16s infinite linear;
+            animation-delay: 8s;
+        }
     </style>
 </head>
-<body class="cafe-gradient text-[#f4f1ee] min-h-screen relative overflow-x-hidden select-none">
+<body class="min-h-screen relative overflow-x-hidden select-none">
 
-    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-        <div class="steam-line steam-1"></div>
-        <div class="steam-line steam-2"></div>
-        <div class="steam-line steam-3"></div>
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <svg class="steam-line steam-1" width="60" height="200" viewBox="0 0 60 200">
+            <path d="M30,200 C45,150 15,100 30,50 C45,0 30,-50 30,-100" />
+        </svg>
+        <svg class="steam-line steam-2" width="60" height="200" viewBox="0 0 60 200">
+            <path d="M30,200 C15,160 45,120 30,80 C15,40 35,0 30,-40" />
+        </svg>
+        <svg class="steam-line steam-3" width="60" height="200" viewBox="0 0 60 200">
+            <path d="M30,200 C50,140 20,90 35,40 C50,-10 25,-40 30,-90" />
+        </svg>
     </div>
 
-    <div id="cafe-platform-root" class="min-h-screen flex flex-col relative z-10"></div>
+    <div id="app" class="min-h-screen flex flex-col relative z-10"></div>
 
     <script>
-        // 3. HARDCODED FALLBACK ARTICLES (5 HIGH CONTRAST DATA NODES)
-        const HARDCODED_ARTICLES = [
-            {
-                id: 1,
-                title: "The Art of the Perfect Microfoam",
-                author: "Barista Elena",
-                excerpt: "Achieving that glossy, wet-paint texture requires precise steam wand positioning and absolute temperature control at 140°F.",
-                category: "Technique",
-                readTime: "4 min read",
-                rating: 5
+        // --- RESTORED ALL 5 ORIGINAL DEFAULT ESSAYS ---
+        const hardcodedSampleArticles = [
+            { 
+                id: 'seed-gaming', 
+                title: 'The Architecture of Virtual Solitude', 
+                subtitle: 'Analyzing pacing, environmental design, and quiet structural ecosystems in modern open-world gaming.', 
+                readTime: '9 min read', 
+                category: '#Gaming', 
+                author: 'Ken Kaneki', 
+                body: 'To step inside a true virtual space is to accept an alternative pace. We dissect how minimal environments craft intentional narrative depth, pushing back against competitive metrics to cultivate personal headspace.' 
             },
-            {
-                id: 2,
-                title: "Unlocking Ethiopian Yirgacheffe",
-                author: "Roaster Liam",
-                excerpt: "A deep dive into the floral, bergamot, and bright citrus notes that define one of the world's most celebrated washed coffees.",
-                category: "Origin Spotlight",
-                readTime: "6 min read",
-                rating: 4
+            { 
+                id: 'seed-sports', 
+                title: 'The Analytical Mind on the Pitch', 
+                subtitle: 'Tactical philosophy, geometric positioning, and the deep reading of space in athletics.', 
+                readTime: '7 min read', 
+                category: '#Sports', 
+                author: 'Alex Thorne', 
+                body: 'Modern sports setups mirror complex structural algorithms. Beyond physical execution lies a deep chess match written across manicured turf, prioritizing temporal mastery over brute physical acceleration.' 
             },
-            {
-                id: 3,
-                title: "Cold Brew vs. Flash Chilled",
-                author: "Cafe Owner Marcus",
-                excerpt: "Why oxidation control during flash chilling preserves volatile aromatics that traditional 24-hour steep cycles leave behind.",
-                category: "Brew Methods",
-                readTime: "5 min read",
-                rating: 4
+            { 
+                id: 'seed-education', 
+                title: 'Sipping Ink at Midnight', 
+                subtitle: 'A structural reflection on classic literary forms, educational architecture, and slow acquisition models.', 
+                readTime: '5 min read', 
+                category: '#Education', 
+                author: 'Suzuya', 
+                body: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct internal friction—a step back away from speed reading modules and rapid-fire video updates into quiet, concentrated study nodes.' 
             },
-            {
-                id: 4,
-                title: "The Physics of Extraction Yield",
-                author: "Dr. Coffee",
-                excerpt: "How particle size distribution and channel formation alter your total dissolved solids (TDS) and ruin sweet extractions.",
-                category: "Science",
-                readTime: "8 min read",
-                rating: 5
+            { 
+                id: 'seed-news', 
+                title: 'The Velocity of Digital Broadcast Networks', 
+                subtitle: 'Unpacking rapid-fire breaking news cycles, information fatigue, and verified editorial streams.', 
+                readTime: '4 min read', 
+                category: '#News', 
+                author: 'Touka Kirishima', 
+                body: 'The constant stream of breaking alerts often dilutes deep contextual truth. In this essay, we look at how rapid news distribution reshapes editorial standards and why returning to decentralized, slower verified print structures protects civic awareness.' 
             },
-            {
-                id: 5,
-                title: "Designing the Modern Espresso Bar",
-                author: "Architect Sara",
-                excerpt: "Optimizing the workflow triangle between the grinder, espresso machine, and knock box to shave seconds off ticket times.",
-                category: "Design",
-                readTime: "7 min read",
-                rating: 3
+            { 
+                id: 'seed-knowledge', 
+                title: 'The Baseline Physics of Espresso Alchemy', 
+                subtitle: 'A thermodynamic deep dive into extraction yields, volatile oil chemistry, and roast profiles.', 
+                readTime: '6 min read', 
+                category: '#GeneralKnowledge', 
+                author: 'Manager Yoshimura', 
+                body: 'Water meeting ground coffee at exactly 9 bar atmospheric pressure is a precise science experiment. We track how pressure variables, organic chemistry arrays, and regional water mineral scaling curves impact the final beverage composition.' 
             }
         ];
 
-        // ENGINE APPLICATION STATE CONTROL
-        let state = {
-            activeTab: 'Main Lounge', // Tracks Sidebar Options
-            articles: [...HARDCODED_ARTICLES],
-            hoveredArticleId: null,
-            hoveredValue: 0,
-            toastActive: false,
-            uploadedImage: null
-        };
+        // Default minimalist café icons for user onboarding avatar selection
+        const defaultCafeAvatars = [
+            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=120&h=120", // Warm Espresso Mug
+            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=120&h=120", // Drip Syphon Filter
+            "https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&q=80&w=120&h=120", // Roasted Beans Pile
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=120&h=120"  // Steam Latte Art
+        ];
 
-        // UI MUTATOR ACTIONS
-        function setActiveTab(tabName) {
-            state.activeTab = tabName;
-            renderApp();
-        }
-
-        // 1 & 2. RATING AND TOAST MUTATOR EXECUTION
-        function rateArticle(articleId, value) {
-            state.articles = state.articles.map(art => 
-                art.id === articleId ? { ...art, rating: value } : art
-            );
+        // --- CORE APPLICATION STATE ENGINE ---
+        function bootstrapCoreEngine() {
+            const isAuth = localStorage.getItem('anteiku_authenticated') === 'true';
+            const currentEmail = localStorage.getItem('anteiku_current_email') || '';
+            const emailKey = sanitizeEmailKey(currentEmail);
             
-            // Trigger Barista Feedback loop
-            state.toastActive = true;
-            renderApp();
+            const isOnboarded = localStorage.getItem(`anteiku_onboarded_${emailKey}`) === 'true';
+            const savedProfile = localStorage.getItem(`anteiku_profile_${emailKey}`);
+            
+            const profile = savedProfile ? JSON.parse(savedProfile) : {
+                name: 'Guest Writer',
+                username: '',
+                avatar: defaultCafeAvatars[0],
+                bio: 'Writing from the corner booth.',
+                followers: 0
+            };
 
-            setTimeout(() => {
-                state.toastActive = false;
-                renderApp();
-            }, 3500);
+            const savedArticles = localStorage.getItem('anteiku_articles');
+            let articles = hardcodedSampleArticles;
+            if (savedArticles) {
+                try {
+                    const parsed = JSON.parse(savedArticles);
+                    if (parsed && parsed.length > 0) articles = parsed;
+                } catch(e) {
+                    articles = hardcodedSampleArticles;
+                }
+            }
+            localStorage.setItem('anteiku_articles', JSON.stringify(articles));
+
+            let notifications = [];
+            if (isAuth && currentEmail) {
+                const savedNotifications = localStorage.getItem(`anteiku_notifications_${emailKey}`);
+                notifications = savedNotifications ? JSON.parse(savedNotifications) : [];
+            }
+
+            return {
+                isAuthenticated: isAuth,
+                currentEmail: currentEmail,
+                showOnboardingModal: isAuth && !isOnboarded,
+                currentView: isAuth && isOnboarded ? 'FEED' : (isAuth ? 'ONBOARDING' : 'LANDING'),
+                profile: profile,
+                databaseArticles: articles,
+                notifications: notifications,
+                activeFilter: '#All',
+                isCategoryDropdownOpen: false,
+                isNotificationDropdownOpen: false,
+                selectedBeanRating: 0,
+                selectedArticleId: articles[0].id,
+                writerSelectedCategory: 'Gaming',
+                customToast: { show: false, title: '', message: '' },
+                showRewardModal: false,
+                
+                // Volatile inputs preserved during session setup
+                onboardingNameValue: profile.name || '',
+                onboardingUsernameValue: profile.username || '',
+                onboardingAvatarValue: profile.avatar || defaultCafeAvatars[0],
+                customAvatarSelected: false,
+
+                aiChatHistory: [
+                    { sender: 'bot', text: 'Welcome back to the text refinery. Enter subject parameters to generate outlines.' }
+                ]
+            };
         }
 
-        function handleImgUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                state.uploadedImage = URL.createObjectURL(file);
-                renderApp();
+        function sanitizeEmailKey(email) {
+            if (!email) return 'default';
+            return email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        }
+
+        let state = bootstrapCoreEngine();
+
+        const categories = [
+            { id: '#All', label: 'All Categories', tag: '#All' },
+            { id: '#Gaming', label: 'Gaming', tag: '#Gaming' },
+            { id: '#Sports', label: 'Sports', tag: '#Sports' },
+            { id: '#Education', label: 'Education', tag: '#Education' },
+            { id: '#News', label: 'News', tag: '#News' },
+            { id: '#GeneralKnowledge', label: 'General Knowledge', tag: '#GeneralKnowledge' }
+        ];
+
+        function triggerInlineToast(title, message) {
+            state.customToast = { show: true, title, message };
+            render();
+            setTimeout(() => {
+                state.customToast.show = false;
+                render();
+            }, 4000);
+        }
+
+        function navigateTo(view) {
+            if (!state.isAuthenticated) {
+                state.currentView = 'LANDING';
+            } else if (state.showOnboardingModal) {
+                state.currentView = 'ONBOARDING';
+            } else {
+                state.currentView = view;
+            }
+            state.isCategoryDropdownOpen = false;
+            state.isNotificationDropdownOpen = false;
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleSignIn(e) {
+            if (e) e.preventDefault();
+            const emailInput = document.querySelector('input[type="email"]').value.trim();
+            
+            state.isAuthenticated = true;
+            state.currentEmail = emailInput;
+            localStorage.setItem('anteiku_authenticated', 'true');
+            localStorage.setItem('anteiku_current_email', emailInput);
+
+            const emailKey = sanitizeEmailKey(emailInput);
+            const isOnboarded = localStorage.getItem(`anteiku_onboarded_${emailKey}`) === 'true';
+            
+            const savedProfile = localStorage.getItem(`anteiku_profile_${emailKey}`);
+            if (savedProfile) {
+                state.profile = JSON.parse(savedProfile);
+            } else {
+                state.profile = {
+                    name: 'Guest Writer',
+                    username: '',
+                    avatar: defaultCafeAvatars[0],
+                    bio: 'Writing from the corner booth.',
+                    followers: 0
+                };
+            }
+
+            const savedNotifications = localStorage.getItem(`anteiku_notifications_${emailKey}`);
+            state.notifications = savedNotifications ? JSON.parse(savedNotifications) : [];
+
+            state.onboardingNameValue = state.profile.name || '';
+            state.onboardingUsernameValue = state.profile.username || '';
+            state.onboardingAvatarValue = state.profile.avatar || defaultCafeAvatars[0];
+            state.customAvatarSelected = false;
+
+            if (!isOnboarded) {
+                state.showOnboardingModal = true;
+                navigateTo('ONBOARDING');
+            } else {
+                state.showOnboardingModal = false;
+                navigateTo('FEED');
+                triggerInlineToast('Authorization Succeeded', 'Your table space token has been validated.');
             }
         }
 
-        function processNewArticle(e) {
-            e.preventDefault();
-            const title = document.getElementById('form-title').value.trim();
-            const category = document.getElementById('form-category').value.trim();
-            const excerpt = document.getElementById('form-content').value.trim();
+        // OPTIMIZED ISOLATED LIVE UNIQUE CHECK ENGINE (NO RENDER INTERRUPTIONS)
+        function liveCheckUsernameUniqueness(inputEl) {
+            const rawVal = inputEl.value;
+            const cleanedInput = rawVal.trim().replace('@', '').toLowerCase();
+            state.onboardingUsernameValue = cleanedInput;
 
-            if (!title || !excerpt) return;
+            const errorBox = document.getElementById('username-error-container');
+            const submitBtn = document.getElementById('onboarding-submit-btn');
+            const inputWrapper = document.getElementById('onboard-username');
 
-            const customArticle = {
-                id: Date.now(),
-                title: title,
-                author: "Head Roaster (You)",
-                excerpt: excerpt,
-                category: category || "General",
-                readTime: "3 min read",
-                rating: 0
-            };
+            if (!cleanedInput) {
+                errorBox.classList.add('hidden');
+                inputWrapper.classList.remove('border-amber-500');
+                inputWrapper.classList.add('border-[#453026]');
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]";
+                return;
+            }
 
-            state.articles.unshift(customArticle);
-            state.uploadedImage = null;
-            state.activeTab = 'Main Lounge';
-            renderApp();
+            let matchesExisting = false;
+            const currentEmailKey = sanitizeEmailKey(state.currentEmail);
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_profile_')) {
+                    if (storageKey === `anteiku_profile_${currentEmailKey}`) continue;
+                    try {
+                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
+                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === cleanedInput) {
+                            matchesExisting = true;
+                            break;
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            if (matchesExisting) {
+                errorBox.classList.remove('hidden');
+                inputWrapper.classList.add('border-amber-500');
+                inputWrapper.classList.remove('border-[#453026]');
+                submitBtn.disabled = true;
+                submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]";
+            } else {
+                errorBox.classList.add('hidden');
+                inputWrapper.classList.remove('border-amber-500');
+                inputWrapper.classList.add('border-[#453026]');
+                
+                // Reactive check for Name input validity before enabling layout button elements
+                const currentNameInput = document.getElementById('onboard-name');
+                if (currentNameInput && currentNameInput.value.trim()) {
+                    submitBtn.disabled = false;
+                    submitBtn.className = "w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]";
+                }
+            }
         }
 
-        // RE-RENDER COMPOSITION ENGINE
-        function renderApp() {
-            const root = document.getElementById('cafe-platform-root');
+        // Live track non-critical text modifications inside Name values without blur glitches
+        function liveUpdateNameField(inputEl) {
+            state.onboardingNameValue = inputEl.value;
+            const usernameInput = document.getElementById('onboard-username');
+            if (usernameInput) {
+                liveCheckUsernameUniqueness(usernameInput);
+            }
+        }
 
-            root.innerHTML = `
-                <header class="border-b border-[#2a1e17] bg-[#0c0806]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-[#d97706] p-2 rounded-xl text-[#0c0806]">
-                            <i data-lucide="coffee" class="w-6 h-6 stroke-[2.5]"></i>
+        function handleOnboardingSubmission(e) {
+            if (e) e.preventDefault();
+            const chosenName = document.getElementById('onboard-name').value.trim();
+            const chosenUsername = state.onboardingUsernameValue.trim();
+            
+            let finalAvatar = state.onboardingAvatarValue;
+            if (state.customAvatarSelected) {
+                const customUrl = document.getElementById('onboard-custom-avatar').value.trim();
+                if (customUrl) finalAvatar = customUrl;
+            }
+
+            if (!chosenName || !chosenUsername) {
+                triggerInlineToast('Validation Error', 'Fields cannot remain unwritten.');
+                return;
+            }
+
+            // Final safety loop inspection lock check
+            let structuralCollision = false;
+            const currentEmailKey = sanitizeEmailKey(state.currentEmail);
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_profile_')) {
+                    if (storageKey === `anteiku_profile_${currentEmailKey}`) continue;
+                    try {
+                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
+                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === chosenUsername.toLowerCase()) {
+                            structuralCollision = true;
+                            break;
+                        }
+                    } catch (ex) {}
+                }
+            }
+
+            if (structuralCollision) {
+                triggerInlineToast('Validation Collision', 'This handle configuration is occupied.');
+                return;
+            }
+
+            const emailKey = sanitizeEmailKey(state.currentEmail);
+            
+            state.profile.name = chosenName;
+            state.profile.username = chosenUsername;
+            state.profile.avatar = finalAvatar;
+            
+            localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
+            localStorage.setItem(`anteiku_onboarded_${emailKey}`, 'true');
+            
+            state.showOnboardingModal = false;
+            executeIncomingNotificationSimulation('follower', null);
+
+            triggerInlineToast('Profile Configured', 'Your workspace identity nodes have unified successfully.');
+            navigateTo('FEED');
+        }
+
+        function handleSignOut() {
+            state.isAuthenticated = false;
+            state.currentEmail = '';
+            state.showOnboardingModal = false;
+            localStorage.setItem('anteiku_authenticated', 'false');
+            localStorage.setItem('anteiku_current_email', '');
+            navigateTo('LANDING');
+        }
+
+        function executeIncomingNotificationSimulation(type, title) {
+            let message = '';
+            if (type === 'like') {
+                message = `A customer liked your article '${title}'.`;
+            } else {
+                message = `A new reader started following your table. Welcome to the workspace, ${state.profile.name}!`;
+                state.profile.followers += 1;
+                const emailKey = sanitizeEmailKey(state.currentEmail);
+                localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
+            }
+            state.notifications.unshift({ id: Date.now(), type, message, unread: true });
+            if (state.currentEmail) {
+                localStorage.setItem(`anteiku_notifications_${sanitizeEmailKey(state.currentEmail)}`, JSON.stringify(state.notifications));
+            }
+        }
+
+        function clearAllNotifications() {
+            state.notifications = state.notifications.map(n => ({ ...n, unread: false }));
+            if (state.currentEmail) {
+                localStorage.setItem(`anteiku_notifications_${sanitizeEmailKey(state.currentEmail)}`, JSON.stringify(state.notifications));
+            }
+            render();
+        }
+
+        function handlePublishArticle(e) {
+            if (e) e.preventDefault();
+            const titleInput = document.getElementById('w-title').value.trim();
+            const subtitleInput = document.getElementById('w-subtitle').value.trim();
+            const bodyInput = document.getElementById('w-body').value.trim();
+            
+            if (!titleInput || !bodyInput) {
+                triggerInlineToast('Validation Error', 'Fields cannot remain unwritten.');
+                return;
+            }
+
+            const newPost = {
+                id: String(Date.now()),
+                title: titleInput,
+                subtitle: subtitleInput || 'Analytical study curated over fresh grounds.',
+                readTime: `${Math.max(1, Math.ceil(bodyInput.split(' ').length / 160))} min read`,
+                category: `#${state.writerSelectedCategory}`,
+                author: state.profile.name,
+                body: bodyInput
+            };
+
+            state.databaseArticles.unshift(newPost);
+            localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
+            
+            executeIncomingNotificationSimulation('like', titleInput);
+            triggerInlineToast('Article Synchronized', `Dispatched under ${newPost.category}.`);
+            navigateTo('ACCOUNT');
+        }
+
+        // --- PLATFORM VIEW COMPILER ENGINE ---
+        function render() {
+            const app = document.getElementById('app');
+            const unreadCount = state.notifications.filter(n => n.unread).length;
+
+            // --- SIGN-IN MODAL WALL CHECK ---
+            if (!state.isAuthenticated || state.currentView === 'LANDING') {
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
+                        <div class="max-w-md w-full space-y-6 z-10 animate-fadeIn bg-[#16100d] border border-[#3c2a22] p-8 rounded-2xl shadow-2xl">
+                            <div class="text-center space-y-2">
+                                <div class="flex justify-center mb-1">
+                                    <div class="p-4 bg-[#231915] border border-[#523b30] rounded-full">
+                                        <i data-lucide="coffee" class="w-10 h-10 text-[#fbbf24]"></i>
+                                    </div>
+                                </div>
+                                <h1 class="text-4xl font-bold tracking-wide text-[#fbbf24]">Anteiku Hub</h1>
+                                <p class="text-xs text-[#f5f0eb]/90">Sign-in credentials persist natively across reloads.</p>
+                            </div>
+                            <form onsubmit="handleSignIn(event)" class="space-y-4 pt-2">
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Cafe ID (Email)</label>
+                                    <input type="email" required placeholder="writer@anteiku.com" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                </div>
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Security Token</label>
+                                    <input type="password" required placeholder="••••••••••••" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                </div>
+                                <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-widest transition-all">Validate Access Token</button>
+                            </form>
                         </div>
-                        <div>
-                            <h1 class="text-lg font-bold tracking-tight text-[#d97706]">THE ESPRESSO ARCHIVE</h1>
-                            <p class="text-[10px] text-[#a39284] tracking-widest uppercase font-semibold">Smoky Lounge Platform</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            // --- USER ONBOARDING WITH STABLE DOM INPUT CHANNELS ---
+            if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
+                // Pre-verify initial state validation parameters for setup layout rendering metrics
+                const isInitiallyEmpty = !state.onboardingUsernameValue || !state.onboardingNameValue;
+                
+                let avatarGridHtml = defaultCafeAvatars.map((url, index) => {
+                    const isSelected = !state.customAvatarSelected && state.onboardingAvatarValue === url;
+                    return `
+                        <div onclick="state.customAvatarSelected=false; state.onboardingAvatarValue='${url}'; render();" class="relative cursor-pointer rounded-xl overflow-hidden border-2 h-14 w-14 transition-all ${isSelected ? 'border-[#fbbf24] scale-105 shadow-md shadow-[#fbbf24]/20' : 'border-[#2d201a] opacity-60 hover:opacity-100'}">
+                            <img src="${url}" alt="Avatar Selection ${index + 1}" class="w-full h-full object-cover" />
+                        </div>`;
+                }).join('');
+
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
+                        <div class="max-w-md w-full space-y-5 z-10 animate-fadeIn bg-[#16100d] border border-[#fbbf24]/60 p-8 rounded-2xl shadow-2xl">
+                            <div class="text-center space-y-1">
+                                <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">Welcome to the Café</h2>
+                                <p class="text-xs text-[#f5f0eb]/80 font-light">Let's set up your table profile parameters.</p>
+                            </div>
+
+                            <form onsubmit="handleOnboardingSubmission(event)" class="space-y-4 pt-1">
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1">Enter your Name</label>
+                                    <input type="text" id="onboard-name" required value="${state.onboardingNameValue}" oninput="liveUpdateNameField(this)" placeholder="e.g. Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                </div>
+                                
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1">Choose a Username (handle)</label>
+                                    <div class="relative flex items-center">
+                                        <span class="absolute left-4 text-sm font-bold font-mono text-[#fbbf24]">@</span>
+                                        <input type="text" id="onboard-username" required value="${state.onboardingUsernameValue}" oninput="liveCheckUsernameUniqueness(this)" placeholder="books_and_brews" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg pl-9 pr-4 py-2 text-sm text-[#f5f0eb] font-mono focus:outline-none transition-colors" />
+                                    </div>
+                                    
+                                    <div id="username-error-container" class="mt-1.5 text-xs text-amber-400 font-medium flex items-center gap-1 hidden">
+                                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                                        <span>This username is already taken. Please choose a different handle.</span>
+                                    </div>
+                                </div>
+
+                                <div class="bg-[#0c0806] p-3 rounded-xl border border-[#2d201a] space-y-3">
+                                    <label class="text-xs uppercase tracking-wider text-[#fbbf24] font-bold block">Choose Profile Picture</label>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-14 w-14 rounded-xl border border-[#453026] overflow-hidden bg-[#16100d] shrink-0">
+                                            <img id="avatar-preview" src="${state.onboardingAvatarValue}" class="w-full h-full object-cover" alt="Profile Preview" />
+                                        </div>
+                                        <div class="flex gap-2 flex-wrap">${avatarGridHtml}</div>
+                                    </div>
+
+                                    <div class="pt-1">
+                                        <span class="text-[10px] uppercase text-gray-400 block font-semibold mb-1">Or provide external custom picture image link URL:</span>
+                                        <input type="url" id="onboard-custom-avatar" placeholder="https://example.com/image.jpg" 
+                                            value="${state.customAvatarSelected ? state.onboardingAvatarValue : ''}"
+                                            oninput="state.customAvatarSelected=true; state.onboardingAvatarValue=this.value; document.getElementById('avatar-preview').src=this.value;" 
+                                            class="w-full bg-[#16100d] border border-[#453026] rounded-lg px-3 py-1.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                    </div>
+                                </div>
+
+                                <div class="pt-1">
+                                    <button type="submit" id="onboarding-submit-btn" ${isInitiallyEmpty ? 'disabled' : ''} class="w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg ${isInitiallyEmpty ? 'bg-[#2d201a] text-gray-500 cursor-not-allowed border border-[#3c2a22]' : 'bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806]'}"">
+                                        Let's Go <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
+                    </div>`;
+                lucide.createIcons();
+                
+                // Immediately check field state inside DOM initialization loop to set initial validation views correctly
+                const initUserEl = document.getElementById('onboard-username');
+                if (initUserEl && initUserEl.value) {
+                    liveCheckUsernameUniqueness(initUserEl);
+                }
+                return;
+            }
+
+            // --- PLATFORM BASE STRUCTURAL HOUSING ---
+            app.innerHTML = `
+                <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
+                    <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
+                        <i data-lucide="coffee" class="w-5 h-5 text-[#fbbf24] group-hover:rotate-12 transition-transform"></i>
+                        <span class="text-lg font-bold tracking-wider uppercase text-[#fbbf24]">Anteiku Hub</span>
                     </div>
+                    
+                    <div class="flex items-center gap-4 relative">
+                        <div class="flex items-center gap-3 px-3 py-1 rounded-lg bg-[#231915] border border-[#2d201a]">
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" alt="User Profile" class="w-7 h-7 rounded-md object-cover border border-[#453026]" />
+                            <span class="text-xs font-mono font-medium text-[#fbbf24]">${state.profile.name} (@${state.profile.username})</span>
+                        </div>
 
-                    <div class="flex items-center gap-4">
-                        <button class="relative p-2 rounded-lg text-[#a39284] hover:text-[#f4f1ee] hover:bg-[#2a1e17] transition-all">
-                            <i data-lucide="bell" class="w-5 h-5"></i>
-                            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-[#d97706] rounded-full"></span>
-                        </button>
-                        
-                        <button class="flex items-center gap-2 bg-[#2a1e17] hover:bg-[#3d2c22] border border-[#3d2c22] text-[#f4f1ee] px-4 py-2 rounded-xl text-sm font-medium transition-all">
-                            <i data-lucide="user" class="w-4 h-4 text-[#d97706]"></i>
-                            <span>Edit Profile</span>
-                        </button>
+                        <div class="relative">
+                            <button onclick="state.isNotificationDropdownOpen=!state.isNotificationDropdownOpen; state.isCategoryDropdownOpen=false; render();" class="relative p-2 text-[#fbbf24] rounded-lg hover:bg-[#231915]">
+                                <i data-lucide="bell" class="w-5 h-5 text-[#fbbf24]"></i>
+                                ${unreadCount > 0 ? `<span class="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#16100d]">${unreadCount}</span>` : ''}
+                            </button>
+
+                            <div class="absolute right-0 mt-3 w-80 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 z-[60] ${state.isNotificationDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
+                                <div class="p-3 bg-[#231915] border-b border-[#2d201a] flex justify-between items-center">
+                                    <h4 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Platform Live Alerts</h4>
+                                    ${unreadCount > 0 ? `<button onclick="clearAllNotifications()" class="text-[10px] text-[#fbbf24] hover:underline uppercase font-bold tracking-wider">Flush</button>` : ''}
+                                </div>
+                                <div class="max-h-64 overflow-y-auto divide-y divide-[#231915]">
+                                    ${state.notifications.length > 0 ? state.notifications.map(n => `
+                                        <div class="p-3.5 text-xs flex items-start gap-2.5 ${n.unread ? 'bg-[#231915]/40 border-l-2 border-[#fbbf24]' : ''}">
+                                            <i data-lucide="bell" class="w-4 h-4 mt-0.5 shrink-0 text-[#fbbf24]"></i>
+                                            <p class="text-[#f5f0eb] font-light leading-relaxed">${n.message}</p>
+                                        </div>`).join('') : `<div class="p-6 text-center text-xs text-gray-400 font-light italic">Your personal workspace is empty.</div>`}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </header>
 
-                <div class="flex flex-1 relative">
-                    
-                    <aside class="w-72 border-r border-[#2a1e17] bg-[#0c0806]/40 p-4 flex flex-col gap-2 shrink-0">
-                        <p class="text-[10px] font-bold tracking-wider text-[#543d2b] uppercase px-3 mb-2">Navigation Matrix</p>
-                        
-                        <button onclick="setActiveTab('Main Lounge')" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all ${state.activeTab === 'Main Lounge' ? 'bg-[#d97706] text-[#0c0806]' : 'text-[#a39284] hover:text-[#f4f1ee] hover:bg-[#1f1611]'}"">
-                            <i data-lucide="compass" class="w-5 h-5"></i>
-                            <span>Main Lounge</span>
-                        </button>
-
-                        <button onclick="setActiveTab('Write Article')" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all ${state.activeTab === 'Write Article' ? 'bg-[#d97706] text-[#0c0806]' : 'text-[#a39284] hover:text-[#f4f1ee] hover:bg-[#1f1611]'}"">
-                            <i data-lucide="pen-tool" class="w-5 h-5"></i>
-                            <span>Write Article</span>
-                        </button>
-
-                        <button onclick="setActiveTab('Account Management')" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all ${state.activeTab === 'Account Management' ? 'bg-[#d97706] text-[#0c0806]' : 'text-[#a39284] hover:text-[#f4f1ee] hover:bg-[#1f1611]'}"">
-                            <i data-lucide="settings" class="w-5 h-5"></i>
-                            <span>Account Management</span>
-                        </button>
+                <div class="flex flex-1 flex-col md:flex-row relative z-10">
+                    <aside class="w-full md:w-64 bg-[#16100d]/90 backdrop-blur-sm border-b md:border-b-0 md:border-r border-[#2d201a] p-6 flex flex-col justify-between shrink-0 shadow-2xl">
+                        <div class="space-y-4">
+                            <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold px-2">Café Navigation Index</p>
+                            <nav class="space-y-1">
+                                <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='FEED' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}""><i data-lucide="compass" class="w-4 h-4 text-[#fbbf24]"></i> The Main Lounge</button>
+                                <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}""><i data-lucide="pen-tool" class="w-4 h-4 text-[#fbbf24]"></i> Write Article</button>
+                                <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}""><i data-lucide="shield-check" class="w-4 h-4 text-[#fbbf24]"></i> My Account</button>
+                            </nav>
+                        </div>
+                        <div class="space-y-3 pt-6 border-t border-[#231915]">
+                            <div class="flex items-center gap-3 p-2 bg-[#0c0806] rounded-xl border border-[#2d201a]">
+                                <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-10 w-10 object-cover rounded-lg border border-[#453026]" alt="Sidebar Identity Profile Frame" />
+                                <div class="overflow-hidden">
+                                    <span class="text-xs text-white font-bold block truncate">${state.profile.name}</span>
+                                    <span class="text-[10px] text-[#fbbf24] font-mono block truncate">@${state.profile.username}</span>
+                                </div>
+                            </div>
+                            <button onclick="handleSignOut()" class="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-400 hover:bg-red-950/20 rounded-lg border border-transparent transition-all"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit Session</button>
+                        </div>
                     </aside>
 
-                    <main class="flex-1 p-8 max-w-4xl mx-auto w-full">
-                        
-                        ${state.activeTab === 'Main Lounge' ? `
-                            <div class="space-y-6">
-                                <div class="border-b border-[#2a1e17] pb-4">
-                                    <h2 class="text-xl font-bold text-[#f4f1ee]">The Main Lounge Feed</h2>
-                                    <p class="text-xs text-[#a39284]">Freshly brewed documentation assets mapping properly</p>
-                                </div>
-
-                                <div class="grid gap-5">
-                                    ${state.articles.map(article => {
-                                        let coffeeSystemHtml = '';
-                                        for(let i = 1; i <= 5; i++) {
-                                            // Determine signature Warm Amber lighting matrix conditions
-                                            const isAmberLit = state.hoveredArticleId === article.id ? (i <= state.hoveredValue) : (i <= article.rating);
-                                            coffeeSystemHtml += `
-                                                <button 
-                                                    onclick="rateArticle(${article.id}, ${i})"
-                                                    onmouseenter="state.hoveredArticleId=${article.id}; state.hoveredValue=${i}; renderApp();"
-                                                    onmouseleave="state.hoveredArticleId=null; state.hoveredValue=0; renderApp();"
-                                                    class="focus:outline-none transition-transform active:scale-90"
-                                                >
-                                                    <i data-lucide="coffee" class="w-5 h-5 ${isAmberLit ? 'text-[#d97706] fill-[#d97706] drop-shadow-[0_0_5px_rgba(217,119,6,0.5)]' : 'text-[#3d2c22] fill-transparent'}"></i>
-                                                </button>
-                                            `;
-                                        }
-
-                                        return `
-                                            <article class="bg-[#140e0b] border border-[#2a1e17] rounded-2xl p-6 hover:border-[#3d2c22] transition-all shadow-xl">
-                                                <div class="flex items-center justify-between gap-4 mb-3">
-                                                    <span class="text-[10px] font-bold tracking-wide uppercase text-[#d97706] bg-[#2a1e17] px-2.5 py-1 rounded-md">${article.category}</span>
-                                                    <span class="text-xs text-[#a39284]">${article.readTime}</span>
-                                                </div>
-                                                <h3 class="text-lg font-bold text-[#f4f1ee] mb-2">${article.title}</h3>
-                                                <p class="text-sm text-[#c4b5a6] leading-relaxed mb-4">${article.excerpt}</p>
-                                                
-                                                <div class="pt-4 border-t border-[#1f1611] flex items-center justify-between">
-                                                    <span class="text-xs text-[#a39284]">By <span class="text-[#f4f1ee] font-medium">${article.author}</span></span>
-                                                    
-                                                    <div class="flex items-center gap-3 bg-[#0c0806] px-3 py-1.5 rounded-xl border border-[#1f1611]">
-                                                        <span class="text-[10px] font-bold text-[#a39284] uppercase tracking-wider">Aroma:</span>
-                                                        <div class="flex gap-1">${coffeeSystemHtml}</div>
-                                                    </div>
-                                                </div>
-                                            </article>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        ${state.activeTab === 'Write Article' ? `
-                            <div class="space-y-6 max-w-xl">
-                                <div>
-                                    <h2 class="text-xl font-bold text-[#f4f1ee]">Brew New Copy Asset</h2>
-                                    <p class="text-xs text-[#a39284]">Pour down your custom text metrics directly into the stream</p>
-                                </div>
-
-                                <form onsubmit="processNewArticle(event)" class="space-y-4 bg-[#140e0b] border border-[#2a1e17] rounded-2xl p-6">
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-[#a39284] uppercase tracking-wider mb-1.5">Headline</label>
-                                        <input type="text" id="form-title" required placeholder="The Physics of Extraction Dynamics" class="w-full bg-[#0c0806] border border-[#2a1e17] rounded-xl px-4 py-2.5 text-sm text-[#f4f1ee] focus:outline-none focus:border-[#d97706]" />
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-[#a39284] uppercase tracking-wider mb-1.5">Category Tag</label>
-                                        <input type="text" id="form-category" placeholder="Technique" class="w-full bg-[#0c0806] border border-[#2a1e17] rounded-xl px-4 py-2.5 text-sm text-[#f4f1ee] focus:outline-none focus:border-[#d97706]" />
-                                    </div>
-                                    
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-[#a39284] uppercase tracking-wider mb-1.5">Graphic Visual Asset</label>
-                                        <div class="border-2 border-dashed border-[#2a1e17] rounded-xl p-4 bg-[#0c0806] text-center hover:border-[#3d2c22] transition-colors relative">
-                                            <input type="file" accept="image/*" onchange="handleImgUpload(event)" class="absolute inset-0 opacity-0 cursor-pointer" />
-                                            ${state.uploadedImage ? `
-                                                <div class="relative max-h-36 overflow-hidden rounded-lg">
-                                                    <img src="${state.uploadedImage}" class="w-full object-cover" />
-                                                </div>
-                                            ` : `
-                                                <div class="flex flex-col items-center py-2 text-[#a39284]">
-                                                    <i data-lucide="image" class="w-6 h-6 mb-1 text-[#d97706]"></i>
-                                                    <p class="text-xs font-medium">Attach Layout Image Reference File</p>
-                                                </div>
-                                            `}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-[#a39284] uppercase tracking-wider mb-1.5">Article Body Context</label>
-                                        <textarea id="form-content" required rows="5" placeholder="Pour structural technical text out here..." class="w-full bg-[#0c0806] border border-[#2a1e17] rounded-xl px-4 py-2.5 text-sm text-[#f4f1ee] focus:outline-none focus:border-[#d97706] resize-none"></textarea>
-                                    </div>
-
-                                    <button type="submit" class="w-full bg-[#d97706] hover:bg-[#b45309] text-[#0c0806] font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2">
-                                        <i data-lucide="send" class="w-4 h-4"></i> Commit Draft into Lounge
-                                    </button>
-                                </form>
-                            </div>
-                        ` : ''}
-
-                        ${state.activeTab === 'Account Management' ? `
-                            <div class="space-y-6 max-w-xl">
-                                <div>
-                                    <h2 class="text-xl font-bold text-[#f4f1ee]">Account Configuration</h2>
-                                    <p class="text-xs text-[#a39284]">Manage security credentials, tokens, and active profile access parameters</p>
-                                </div>
-                                <div class="bg-[#140e0b] border border-[#2a1e17] rounded-2xl p-5 space-y-3">
-                                    <div class="flex items-center justify-between p-3.5 bg-[#0c0806] border border-[#1f1611] rounded-xl">
-                                        <div>
-                                            <p class="text-sm font-medium text-[#f4f1ee]">System Profile</p>
-                                            <p class="text-[11px] text-[#a39284]">Active Profile: Head Roaster Matrix</p>
-                                        </div>
-                                        <span class="text-[10px] px-2 py-0.5 rounded bg-[#2a1e17] text-[#d97706] font-mono font-bold">ACTIVE</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-
-                    </main>
+                    <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden animate-fadeIn" id="view-target"></main>
                 </div>
 
-                <div class="fixed bottom-6 right-6 z-[100] transform transition-all duration-300 ease-out ${state.toastActive ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}">
-                    <div class="bg-[#1c1410] border-2 border-[#d97706] px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
-                        <div class="bg-[#d97706] text-[#0c0806] p-1 rounded-md">
-                            <i data-lucide="coffee" class="w-4 h-4 fill-current"></i>
-                        </div>
-                        <p class="text-xs font-bold tracking-wide text-[#f4f1ee]">The Barista appreciates your rating! ☕✨</p>
+                ${state.customToast.show ? `
+                <div class="fixed bottom-6 right-6 z-[120] max-w-sm w-full bg-[#16100d] border border-[#fbbf24]/40 p-4 rounded-xl shadow-2xl flex gap-3 items-start animate-fadeIn">
+                    <div class="space-y-0.5 flex-1">
+                        <h5 class="text-xs uppercase tracking-wider font-bold text-[#fbbf24]">${state.customToast.title}</h5>
+                        <p class="text-xs text-[#f5f0eb] font-light leading-relaxed">${state.customToast.message}</p>
                     </div>
-                </div>
-            `;
+                </div>` : ''}`;
 
-            // Re-instantiate Icons Globally
+            const target = document.getElementById('view-target');
+
+            // --- VIEW A: CENTRAL LOUNGE FEED ---
+            if (state.currentView === 'FEED') {
+                let dropdownMenuOptionsHtml = categories.map(c => `
+                    <button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" 
+                        class="w-full text-left px-4 py-2.5 text-xs font-mono transition-colors flex justify-between items-center ${state.activeFilter === c.id ? 'bg-[#2d201a] text-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}"">
+                        <span>${c.tag} <span class="text-[10px] text-gray-400 ml-1">(${c.label})</span></span>
+                    </button>`).join('');
+
+                let filtered = state.activeFilter === '#All' 
+                    ? state.databaseArticles 
+                    : state.databaseArticles.filter(a => a.category === state.activeFilter);
+
+                let feedCardsHtml = filtered.map(art => `
+                    <div class="bg-[#16100d]/90 backdrop-blur-sm border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/40 transition-all duration-300 flex flex-col justify-between shadow-md">
+                        <div>
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-xs font-mono font-bold tracking-wider text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded">${art.category}</span>
+                                <span class="text-xs text-gray-400 font-mono">${art.readTime}</span>
+                                <span class="text-xs text-gray-300 ml-auto font-medium">By <b class="text-[#fbbf24]">${art.author}</b></span>
+                            </div>
+                            <h2 class="text-xl font-bold mb-1.5 text-[#fbbf24]">${art.title}</h2>
+                            <p class="font-serif italic text-xs text-[#f5f0eb]/70 mb-3">${art.subtitle}</p>
+                            <p class="text-sm text-[#f5f0eb]/90 font-light leading-relaxed">${art.body}</p>
+                        </div>
+                    </div>`).join('');
+
+                target.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="border-b border-[#2d201a] pb-4 flex items-center justify-between relative z-40">
+                            <div class="relative">
+                                <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" 
+                                    class="px-4 py-2 rounded-lg text-xs font-bold bg-[#16100d] text-[#f5f0eb] border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2 transition-all">
+                                    <span>Lounge Category: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 text-[#fbbf24]"></i>
+                                </button>
+                                <div class="absolute left-0 mt-2 w-56 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100 animate-fadeIn' : 'opacity-0 scale-95 pointer-events-none'}"">
+                                    ${dropdownMenuOptionsHtml}
+                                </div>
+                            </div>
+                            <h3 class="text-sm font-bold tracking-widest text-[#fbbf24] uppercase font-serif">Central Review Desk</h3>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6 pt-1">${feedCardsHtml || '<div class="p-8 text-center text-xs text-gray-400 italic">No matching records.</div>'}</div>
+                    </div>`;
+            }
+
+            // --- VIEW B: WRITE COMPOSITION SCREEN ---
+            else if (state.currentView === 'WRITE') {
+                target.innerHTML = `
+                    <div class="space-y-5 max-w-2xl mx-auto">
+                        <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">Assign Article Catalog Stream</h3>
+                            <div class="flex gap-2 flex-wrap">
+                                ${['Gaming', 'Sports', 'Education', 'News', 'GeneralKnowledge'].map(cat => `
+                                    <button onclick="state.writerSelectedCategory='${cat}'; render();" class="px-3 py-1.5 rounded-lg text-xs font-mono border ${state.writerSelectedCategory===cat?'border-[#fbbf24] bg-[#231915] text-[#fbbf24]':'border-[#3c2a22] text-gray-400'}"">#${cat}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <input type="text" id="w-title" placeholder="Title your essay..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-2xl font-bold text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                            <input type="text" id="w-subtitle" placeholder="Add subtitle summary..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-sm italic text-[#f5f0eb]/80 focus:outline-none" />
+                            <textarea id="w-body" rows="8" placeholder="Begin weaving your paragraphs..." class="w-full bg-[#16100d] border border-[#2d201a] rounded-xl p-4 text-sm text-[#f5f0eb] leading-relaxed focus:outline-none focus:border-[#fbbf24] resize-none"></textarea>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button onclick="handlePublishArticle(event)" class="px-6 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded-lg tracking-wider uppercase transition-all">Publish Content Node</button>
+                        </div>
+                    </div>`;
+            }
+
+            // --- VIEW C: MY ACCOUNT VIEWER ---
+            else if (state.currentView === 'ACCOUNT') {
+                let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
+                let dashboardCardsHtml = personalArticles.map(p => `
+                    <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl space-y-1">
+                        <span class="text-[10px] font-mono text-[#fbbf24]">${p.category}</span>
+                        <h4 class="text-md font-bold text-white">${p.title}</h4>
+                        <p class="text-xs text-[#f5f0eb]/70 truncate">${p.body}</p>
+                    </div>`).join('');
+
+                target.innerHTML = `
+                    <div class="space-y-6 max-w-3xl mx-auto">
+                        <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-5 shadow-xl">
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-20 w-20 rounded-2xl object-cover border-2 border-[#fbbf24]/40 bg-[#0c0806]" alt="Account Identity Profile Frame" />
+                            <div class="space-y-1 text-center sm:text-left flex-1">
+                                <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">${state.profile.name}</h2>
+                                <p class="text-xs font-mono text-gray-400">Handle Reference: <span class="text-[#fbbf24]">@${state.profile.username}</span></p>
+                                <p class="text-xs text-[#f5f0eb]/90 font-light pt-1">${state.profile.bio}</p>
+                            </div>
+                            <div class="px-4 py-2 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center shrink-0">
+                                <span class="text-xs text-gray-400 block font-mono">Followers</span>
+                                <b class="text-xl font-bold text-[#fbbf24]">${state.profile.followers}</b>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-xl space-y-4">
+                            <h3 class="text-xs uppercase tracking-wider font-bold text-[#fbbf24] border-b border-[#2d201a] pb-2">Your Published Literary Ledger Entries</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                ${dashboardCardsHtml || '<p class="text-xs text-gray-400 italic p-4">No content ledger entries published under this account token block.</p>'}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
             lucide.createIcons();
         }
 
-        // Initialize App Viewport Engine
-        renderApp();
+        render();
     </script>
 </body>
 </html>
