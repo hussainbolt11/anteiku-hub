@@ -1,174 +1,137 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Coffee, Bell, LogOut, User, Edit2, Send, Heart, Image as ImageIcon } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anteiku Hub | Read deeply, write freely.</title>
+    <style>
+        :root {
+            --bg-dark: #0c0806;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --accent: #ffbf00;
+            --text: #e5d3c0;
+            --border: #332a26;
+        }
 
-// --- STYLES (Inline CSS for portability) ---
-const styles = {
-  container: {
-    minHeight: '100vh',
-    background: 'radial-gradient(circle at center, #16110f 0%, #0c0806 100%)',
-    color: '#e5d3c0',
-    fontFamily: 'sans-serif',
-    position: 'relative',
-    overflowX: 'hidden'
-  },
-  steam: {
-    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0,
-    opacity: 0.05, stroke: '#ffffff'
-  },
-  card: { background: 'rgba(255,255,255,0.03)', border: '1px solid #332a26', borderRadius: '12px', padding: '20px' },
-  accent: { color: '#ffbf00' } // Warm Amber
-};
+        body {
+            margin: 0;
+            background: radial-gradient(circle at center, #16110f 0%, var(--bg-dark) 100%);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
 
-// --- COMPONENTS ---
+        /* UI Helpers */
+        .hidden { display: none !important; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; }
+        .accent-text { color: var(--accent); }
 
-const AnteikuApp = () => {
-  const [user, setUser] = useState(null);
-  const [onboarding, setOnboarding] = useState(false);
-  const [activeTab, setActiveTab] = useState('Lounge');
-  const [articles, setArticles] = useState([]);
-  const [toast, setToast] = useState('');
+        /* Auth/Onboarding Containers */
+        #auth-portal, #onboarding-modal {
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+        }
 
-  // Session Management
-  useEffect(() => {
-    const savedUser = localStorage.getItem('anteiku_user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setUser(parsed);
-      if (!parsed.username) setOnboarding(true);
-    }
-  }, []);
+        /* Layout */
+        #app-layout { display: flex; flex-direction: column; height: 100vh; }
+        header { border-bottom: 1px solid var(--border); padding: 20px; display: flex; justify-content: space-between; }
+        .main-content { display: flex; flex: 1; }
+        aside { width: 200px; padding: 20px; }
+        main { flex: 1; padding: 20px; }
+    </style>
+</head>
+<body>
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const newUser = { id: Date.now(), name: '', username: '', pfp: '' };
-    localStorage.setItem('anteiku_user', JSON.stringify(newUser));
-    setUser(newUser);
-    setOnboarding(true);
-  };
-
-  // --- SUB-VIEWS ---
-
-  const AuthView = () => (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <div style={{ ...styles.card, width: '400px', textAlign: 'center' }}>
-        <h1 style={styles.accent}>Anteiku Hub</h1>
-        <p>Read deeply, write freely.</p>
-        <button onClick={handleLogin} style={{ marginTop: '20px', padding: '10px 20px', cursor: 'pointer' }}>Sign In / Create Account</button>
-      </div>
+    <div id="auth-portal">
+        <div class="card" style="width: 350px; text-align: center;">
+            <h1>Anteiku Hub</h1>
+            <p>Read deeply, write freely.</p>
+            <input type="email" placeholder="Email Address" style="display:block; width:90%; margin:10px auto;"><br>
+            <input type="password" placeholder="Password" style="display:block; width:90%; margin:10px auto;"><br>
+            <button onclick="handleLogin()">Sign In</button>
+        </div>
     </div>
-  );
 
-  const OnboardingModal = () => {
-    const [form, setForm] = useState({ name: '', username: '' });
-    const [error, setError] = useState('');
-
-    const submit = (e) => {
-      e.preventDefault();
-      const allUsers = JSON.parse(localStorage.getItem('all_handles') || '[]');
-      if (allUsers.includes(form.username)) {
-        setError('This username is already taken. Please choose a different handle.');
-        return;
-      }
-      const updatedUser = { ...user, ...form };
-      localStorage.setItem('anteiku_user', JSON.stringify(updatedUser));
-      localStorage.setItem('all_handles', JSON.stringify([...allUsers, form.username]));
-      setUser(updatedUser);
-      setOnboarding(false);
-    };
-
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
-        <form onSubmit={submit} style={{ ...styles.card, width: '350px' }}>
-          <h2>Welcome to Anteiku Hub</h2>
-          {error && <p style={{ color: '#ff4d4d' }}>{error}</p>}
-          <input placeholder="Name" required onChange={(e) => setForm({...form, name: e.target.value})} style={{ display: 'block', width: '100%', margin: '10px 0' }} />
-          <input placeholder="Username (handle)" required onChange={(e) => setForm({...form, username: e.target.value})} style={{ display: 'block', width: '100%', margin: '10px 0' }} />
-          <button type="submit">Complete Setup</button>
+    <div id="onboarding-modal" class="hidden">
+        <form class="card" onsubmit="completeOnboarding(event)" style="width: 350px;">
+            <h2>Welcome to Anteiku Hub</h2>
+            <p>Let's set up your table.</p>
+            <div id="error-msg" style="color: #ff4d4d;"></div>
+            <input id="in-name" placeholder="Name" required style="width:100%; margin:10px 0;">
+            <input id="in-handle" placeholder="Username (handle)" required style="width:100%; margin:10px 0;">
+            <button type="submit">Start Hub</button>
         </form>
-      </div>
-    );
-  };
-
-  const MainLounge = () => {
-    const feed = articles.length ? articles : [
-      { id: 1, title: 'Gaming Trends', cat: '#Gaming' }, { id: 2, title: 'Sports Analysis', cat: '#Sports' },
-      { id: 3, title: 'Ed Tech', cat: '#Education' }, { id: 4, title: 'Global News', cat: '#News' },
-      { id: 5, title: 'Trivia', cat: '#GeneralKnowledge' }
-    ];
-
-    return (
-      <div>
-        {feed.map(art => (
-          <div key={art.id} style={{ ...styles.card, marginBottom: '15px' }}>
-            <h3>{art.title} <span style={styles.accent}>{art.cat}</span></h3>
-            <div style={{ display: 'flex', gap: '5px' }}>
-              {[1,2,3,4,5].map(n => (
-                <Coffee key={n} size={20} style={{ cursor: 'pointer' }} onClick={() => {
-                  setToast('The Barista appreciates your rating! ☕✨');
-                  setTimeout(() => setToast(''), 3000);
-                }} />
-              ))}
-              <Heart size={20} />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // --- MAIN RENDER ---
-
-  if (!user) return <AuthView />;
-  if (onboarding) return <OnboardingModal />;
-
-  return (
-    <div style={styles.container}>
-      <svg style={styles.steam}><path d="M0 100 Q 50 0, 100 100 T 200 100" fill="none" /></svg>
-      
-      {/* Navbar */}
-      <nav style={{ padding: '20px', borderBottom: '1px solid #332a26', display: 'flex', justifyContent: 'space-between' }}>
-        <div>
-          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}><Coffee /> Anteiku Hub</h2>
-          <small style={styles.accent}>Read deeply, write freely.</small>
-        </div>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <button>Edit Profile</button>
-          <Bell />
-          <LogOut onClick={() => {localStorage.clear(); window.location.reload()}} style={{cursor:'pointer'}} />
-        </div>
-      </nav>
-
-      <div style={{ display: 'flex', padding: '20px' }}>
-        <aside style={{ width: '200px' }}>
-          {['Main Lounge', 'Write Article', 'Account Management'].map(tab => (
-            <div key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '10px', cursor: 'pointer', color: activeTab === tab ? '#ffbf00' : 'white' }}>{tab}</div>
-          ))}
-        </aside>
-
-        <main style={{ flex: 1, paddingLeft: '20px' }}>
-          {activeTab === 'Main Lounge' && <MainLounge />}
-          {activeTab === 'Write Article' && (
-            <div style={styles.card}>
-              <input placeholder="Headline" style={{width:'100%', marginBottom:'10px'}} />
-              <input placeholder="Image URL" style={{width:'100%', marginBottom:'10px'}} />
-              <textarea placeholder="Ask the Barista for ideas..." style={{width:'100%', height:'100px'}} />
-              <button style={{marginTop:'10px'}}>Publish</button>
-            </div>
-          )}
-          {activeTab === 'Account Management' && (
-            <div style={styles.card}>
-              <h2>{user.username}'s Dashboard</h2>
-              <p>Total Followers: 0</p>
-              <h3>My Published Posts</h3>
-              <p>No posts yet.</p>
-            </div>
-          )}
-        </main>
-      </div>
-
-      {toast && <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#ffbf00', color: 'black', padding: '10px' }}>{toast}</div>}
     </div>
-  );
-};
 
-export default AnteikuApp;
+    <div id="app-layout" class="hidden">
+        <header>
+            <div>
+                <h2>Anteiku Hub</h2>
+                <small class="accent-text">Read deeply, write freely.</small>
+            </div>
+            <div>
+                <button>Edit Profile</button>
+                <button onclick="signOut()">Sign Out</button>
+            </div>
+        </header>
+        <div class="main-content">
+            <aside>
+                <div onclick="showTab('main')">Main Lounge</div>
+                <div onclick="showTab('write')">Write Article</div>
+                <div onclick="showTab('account')">Account Management</div>
+            </aside>
+            <main id="workspace">
+                </main>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        function handleLogin() {
+            localStorage.setItem('user_session', 'active');
+            document.getElementById('auth-portal').classList.add('hidden');
+            document.getElementById('onboarding-modal').classList.remove('hidden');
+        }
+
+        function completeOnboarding(e) {
+            e.preventDefault();
+            const handle = document.getElementById('in-handle').value;
+            const existing = JSON.parse(localStorage.getItem('all_handles') || '[]');
+            
+            if (existing.includes(handle)) {
+                document.getElementById('error-msg').innerText = "This username is already taken. Please choose a different handle.";
+                return;
+            }
+
+            localStorage.setItem('user_handle', handle);
+            localStorage.setItem('all_handles', JSON.stringify([...existing, handle]));
+            
+            document.getElementById('onboarding-modal').classList.add('hidden');
+            document.getElementById('app-layout').classList.remove('hidden');
+            showTab('main');
+        }
+
+        function signOut() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        function showTab(tab) {
+            const workspace = document.getElementById('workspace');
+            if(tab === 'main') {
+                workspace.innerHTML = `<h3>Main Lounge</h3><p>Loading articles...</p>`;
+            } else if(tab === 'write') {
+                workspace.innerHTML = `<h3>Write Article</h3><input placeholder="Headline"><br><textarea placeholder="AI Barista prompts..."></textarea>`;
+            } else {
+                workspace.innerHTML = `<h3>Account Management</h3><p>Dashboard for ${localStorage.getItem('user_handle')}</p>`;
+            }
+        }
+
+        // Initialize
+        if(localStorage.getItem('user_session')) {
+            document.getElementById('auth-portal').classList.add('hidden');
+            document.getElementById('app-layout').classList.remove('hidden');
+            showTab('main');
+        }
+    </script>
+</body>
+</html>
