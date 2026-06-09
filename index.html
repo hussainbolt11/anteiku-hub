@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anteiku Hub - Digital Literary Café</title>
-    <!-- Tailwind CSS Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Fonts (Cinzel Serif + Inter Sans) -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
         body { 
-            background-color: #120c0a; 
+            background-color: #0c0806; 
             color: #f5f0eb; 
             font-family: 'Inter', sans-serif; 
         }
@@ -21,39 +18,50 @@
             font-family: 'Cinzel', serif; 
             color: #fddcb5; 
         }
-        /* Elegant Custom Scrollbar */
+        /* Elegant Custom Coffee House Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #1a120f; }
-        ::-webkit-scrollbar-thumb { background: #36251e; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #160f0c; }
+        ::-webkit-scrollbar-thumb { background: #3c2a22; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #c8a27c; }
         
         .animate-fadeIn {
-            animation: fadeIn 0.3s ease-out forwards;
+            animation: fadeIn 0.25s ease-out forwards;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body class="min-h-screen selection:bg-[#c8a27c]/30 selection:text-[#fddcb5]">
+<body class="min-h-screen selection:bg-[#c8a27c]/40 selection:text-[#fff4e8]">
 
     <div id="app"></div>
 
     <script>
-        // --- CENTRALIZED STATE ENGINE ---
+        // --- RIGOROUS GLOBAL REVOLVING STATE ---
         let state = {
+            isAuthenticated: false,
             currentView: 'LANDING', // LANDING | FEED | PROFILE | WRITE | READER | COMMUNITY | ACCOUNT
             profile: {
-                name: 'Mirza',
-                username: 'bolt_11',
-                bio: 'Digital designer and dedicated author exploring the margins of philosophy and culture.'
+                name: 'Ken Kaneki',
+                username: 'books_and_brews',
+                bio: 'Lover of tragic short stories and slow drip pour-overs. Writing from the corner booth.'
             },
             activeFilter: '#All', // #All | #Gaming | #Sports | #Education | #News | #GeneralKnowledge | Trending
             isCategoryDropdownOpen: false,
             selectedBeanRating: 4,
             activeAmbientTrack: null,
-            selectedArticleId: '1'
+            selectedArticleId: '1',
+            
+            // AI Chat History State Storage
+            aiInputText: '',
+            aiChatHistory: [
+                { sender: 'bot', text: 'Welcome writer. Input a basic theme outline or prompt framework request below, and I will draw up a custom café composition structure layout.' }
+            ],
+            
+            // Interactive Content Engine State
+            draftTitle: '',
+            draftBody: ''
         };
 
         const hashtags = [
@@ -66,106 +74,163 @@
         ];
 
         const articles = [
-            { id: '1', title: 'The Spatial Design of Virtual Worlds', subtitle: 'Analyzing pacing, solitude, and architectural layout rules in modern open-world ecosystems.', readTime: '9 min read', category: '#Gaming', snippet: 'To step inside a true virtual space is to accept an alternative pace. We dissect how minimal environments craft intentional narrative depth...' },
-            { id: '2', title: 'The Analytical Mind on the Pitch', subtitle: 'Tactical philosophy and the deep reading of space and geometric athletic arrays.', readTime: '7 min read', category: '#Sports', snippet: 'Modern sports setups mirror complex structural algorithms. Beyond physical execution lies a deep chess match written across manicured turf...' },
-            { id: '3', title: 'Sipping Ink at Midnight', subtitle: 'A reflection on classic literary forms, education, and slow acquisition models.', readTime: '5 min read', category: '#Education', snippet: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct friction—a step back away from speed reading modules...' }
+            { id: '1', title: 'The Spatial Design of Virtual Worlds', subtitle: 'Analyzing pacing, solitude, and architectural layout rules in modern open-world ecosystems.', readTime: '9 min read', category: '#Gaming', snippet: 'To step inside a true virtual space is to accept an alternative pace. We dissect how minimal environments craft intentional narrative depth, pushing back against competitive metrics to cultivate personal headspace.' },
+            { id: '2', title: 'The Analytical Mind on the Pitch', subtitle: 'Tactical philosophy and the deep reading of space and geometric athletic arrays.', readTime: '7 min read', category: '#Sports', snippet: 'Modern sports setups mirror complex structural algorithms. Beyond physical execution lies a deep chess match written across manicured turf, prioritizing temporal mastery over brute physical acceleration.' },
+            { id: '3', title: 'Sipping Ink at Midnight', subtitle: 'A reflection on classic literary forms, education, and slow acquisition models.', readTime: '5 min read', category: '#Education', snippet: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct internal friction—a step back away from speed reading modules and rapid-fire video updates into quiet, concentrated study nodes.' }
         ];
 
-        // --- HARD ROUTING CONTROLLER ---
-        function setView(view) {
-            state.currentView = view;
-            state.isCategoryDropdownOpen = false; // Auto-close active components
+        // --- HARD ROUTING APP CONTROLLER ---
+        function navigateTo(view) {
+            if (!state.isAuthenticated && view !== 'LANDING') {
+                state.currentView = 'LANDING';
+            } else {
+                state.currentView = view;
+            }
+            state.isCategoryDropdownOpen = false;
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- UI RENDER MATRIX ---
+        // --- INTERACTIVE EVENT ACTION LOGIC FUNCTIONS ---
+        function handleSignIn(e) {
+            if(e) e.preventDefault();
+            state.isAuthenticated = true;
+            navigateTo('FEED');
+        }
+
+        function handleProfileSave(e) {
+            if(e) e.preventDefault();
+            state.profile.name = document.getElementById('edit-name').value;
+            state.profile.username = document.getElementById('edit-username').value.replace('@', '');
+            state.profile.bio = document.getElementById('edit-bio').value;
+            alert('Profile modifications bound to system state successfully.');
+            navigateTo('FEED');
+        }
+
+        function handleSendAiPrompt() {
+            const input = document.getElementById('ai-chat-input');
+            if (!input || !input.value.trim()) return;
+            
+            const userPrompt = input.value.trim();
+            state.aiChatHistory.push({ sender: 'user', text: userPrompt });
+            
+            // Simulate AI Barista Structural Compilation Logic Engine
+            let replyText = `☕ Barista Framework Proposal Outline for "${userPrompt}":\n\n1. The Brew (Intro): Situate your reader inside the concept perimeter.\n2. Flavor Profile (Analysis): Dissect primary components with highly descriptive prose.\n3. Lingering Aftertaste (Conclusion): Rest on an open-ended cultural question.`;
+            
+            state.aiChatHistory.push({ sender: 'bot', text: replyText });
+            state.aiInputText = '';
+            render();
+            
+            // Auto scroll chat to base
+            const box = document.getElementById('chat-scroll-target');
+            if(box) box.scrollTop = box.scrollHeight;
+        }
+
+        // --- MAIN RENDER ARCHITECTURE TEMPLATE ---
         function render() {
             const app = document.getElementById('app');
 
-            // VIEW 1: ACCESS WALL (LANDING)
-            if (state.currentView === 'LANDING') {
+            // VIEW 1: FORCED AUTHENTICATION / ACCESS WALL
+            if (!state.isAuthenticated || state.currentView === 'LANDING') {
                 app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-6 text-center relative overflow-hidden">
-                        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#c8a27c]/5 blur-[120px] rounded-full pointer-events-none"></div>
-                        <div class="max-w-2xl space-y-8 z-10 animate-fadeIn">
-                            <div class="flex justify-center">
-                                <div class="p-4 bg-[#1a120f] border border-[#36251e] rounded-full shadow-xl">
-                                    <i data-lucide="coffee" class="w-12 h-12 text-[#c8a27c]"></i>
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 md:p-6 relative overflow-hidden">
+                        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#c8a27c]/5 blur-[140px] rounded-full pointer-events-none"></div>
+                        
+                        <div class="max-w-md w-full space-y-8 z-10 animate-fadeIn bg-[#130d0b] border border-[#2d1b14] p-8 rounded-2xl shadow-2xl">
+                            <div class="text-center space-y-2">
+                                <div class="flex justify-center mb-2">
+                                    <div class="p-4 bg-[#1c1310] border border-[#3d271e] rounded-full">
+                                        <i data-lucide="coffee" class="w-10 h-10 text-[#c8a27c]"></i>
+                                    </div>
                                 </div>
+                                <h1 class="text-4xl font-bold tracking-wide">Anteiku Hub</h1>
+                                <p class="text-md text-[#c8a27c] italic serif-font">Read deeply. Write freely.</p>
+                                <p class="text-xs text-[#e1d7cf] max-w-sm mx-auto font-light pt-1">
+                                    Welcome to the digital literary café. Please establish your lounge session to access our collective dashboards and feeds.
+                                </p>
                             </div>
-                            <div class="space-y-3">
-                                <h1 class="text-5xl md:text-6xl font-bold tracking-tight">Anteiku Hub</h1>
-                                <p class="text-xl md:text-2xl text-[#c8a27c] italic serif-font">Read deeply. Write freely.</p>
-                            </div>
-                            <p class="text-base text-[#a38a75] max-w-lg mx-auto font-light leading-relaxed">
-                                Welcome to the digital literary café. Step away from transient feeds into a quiet, warm environment built exclusively for dedicated long-form exploration and intellectual composition.
-                            </p>
-                            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-                                <button onclick="setView('FEED')" class="w-48 px-6 py-3.5 bg-[#2d1e18] hover:bg-[#36251e] text-[#fddcb5] border border-[#4a3329] rounded-md font-medium tracking-wide transition-all">Step Inside</button>
-                                <button onclick="setView('FEED')" class="w-48 px-6 py-3.5 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#120c0a] rounded-md font-semibold tracking-wide transition-all shadow-lg shadow-[#c8a27c]/10">Pull Up a Chair</button>
-                            </div>
+
+                            <form onsubmit="handleSignIn(event)" class="space-y-5 pt-2">
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-[#fff4e8] font-semibold block mb-1.5">Lounge Mail Address</label>
+                                    <input type="email" required placeholder="writer@anteiku.com" class="w-full bg-[#0c0806] border border-[#3d271e] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] placeholder:text-[#5a4338] focus:outline-none focus:border-[#c8a27c] transition-colors" />
+                                </div>
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-[#fff4e8] font-semibold block mb-1.5">Security Password</label>
+                                    <input type="password" required placeholder="••••••••••••" class="w-full bg-[#0c0806] border border-[#3d271e] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] placeholder:text-[#5a4338] focus:outline-none focus:border-[#c8a27c] transition-colors" />
+                                </div>
+                                <div class="flex flex-col gap-3 pt-2">
+                                    <button type="submit" class="w-full py-3 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#c8a27c]/10">
+                                        Step Inside (Sign In)
+                                    </button>
+                                    <button type="submit" class="w-full py-3 bg-[#1c1310] hover:bg-[#2d1b14] text-[#fff4e8] border border-[#3d271e] rounded-lg font-semibold text-xs uppercase tracking-wider transition-all">
+                                        Pull Up a Chair (Sign Up)
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>`;
                 lucide.createIcons();
                 return;
             }
 
-            // CORE MASTER LAYOUT SHELL (AUTHENTICATED)
+            // CORE MASTER LAYOUT SHELL (AUTHENTICATED COMPONENT TREE)
             app.innerHTML = `
-                <div class="min-h-screen flex flex-col bg-[#120c0a]">
-                    <!-- Top Navigation Bar -->
-                    <header class="sticky top-0 z-50 bg-[#1a120f]/95 backdrop-blur-md border-b border-[#2d1e18] px-6 py-4 flex justify-between items-center">
-                        <div onclick="setView('FEED')" class="flex items-center gap-3 cursor-pointer group">
+                <div class="min-h-screen flex flex-col bg-[#0c0806]">
+                    <header class="sticky top-0 z-50 bg-[#130d0b]/95 backdrop-blur-md border-b border-[#2d1b14] px-6 py-4 flex justify-between items-center shadow-lg">
+                        <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
                             <i data-lucide="coffee" class="w-5 h-5 text-[#c8a27c] group-hover:rotate-12 transition-transform"></i>
                             <span class="text-lg font-bold tracking-wider uppercase serif-font text-[#fddcb5]">Anteiku Hub</span>
                         </div>
-                        <button onclick="setView('PROFILE')" class="text-xs tracking-wider uppercase font-semibold text-[#c8a27c] hover:text-[#fddcb5] border border-[#36251e] px-4 py-2 rounded-md hover:bg-[#1e1411] transition-all">
-                            Edit Profile
-                        </button>
+                        
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-[#fff4e8] hidden sm:inline-block font-medium bg-[#1c1310] px-3 py-1.5 rounded-md border border-[#2d1b14]">
+                                Welcome back, <b class="text-[#fddcb5] font-semibold">${state.profile.name}</b>
+                            </span>
+                            <button onclick="navigateTo('PROFILE')" class="text-xs tracking-wider uppercase font-bold text-[#c8a27c] hover:text-[#fff4e8] border border-[#3d271e] px-4 py-2 rounded-md hover:bg-[#1c1310] transition-all">
+                                Edit Profile
+                            </button>
+                        </div>
                     </header>
 
-                    <!-- Core Structural Window Grid -->
                     <div class="flex flex-1 flex-col md:flex-row">
-                        <!-- Permanently Anchored Elegant Left Sidebar -->
-                        <aside class="w-full md:w-64 bg-[#1a120f] border-r border-[#2d1e18] p-6 flex flex-col justify-between shrink-0">
-                            <div class="space-y-1">
-                                <p class="text-xs uppercase tracking-widest text-[#a38a75] font-semibold mb-4 px-3">Navigation</p>
-                                <button onclick="setView('FEED')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-all ${state.currentView==='FEED' ? 'bg-[#2d1e18] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#a38a75] hover:text-[#f5f0eb] hover:bg-[#1c1411]'}"">
-                                    <i data-lucide="compass" class="w-4 h-4"></i> The Main Lounge
-                                </button>
-                                <button onclick="setView('WRITE')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-all ${state.currentView==='WRITE' ? 'bg-[#2d1e18] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#a38a75] hover:text-[#f5f0eb] hover:bg-[#1c1411]'}"">
-                                    <i data-lucide="pen-tool" class="w-4 h-4"></i> Write Article
-                                </button>
-                                <button onclick="setView('COMMUNITY')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-all ${state.currentView==='COMMUNITY' ? 'bg-[#2d1e18] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#a38a75] hover:text-[#f5f0eb] hover:bg-[#1c1411]'}"">
-                                    <i data-lucide="users" class="w-4 h-4"></i> The Community
-                                </button>
-                                <button onclick="setView('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d1e18] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#a38a75] hover:text-[#f5f0eb] hover:bg-[#1c1411]'}"">
-                                    <i data-lucide="shield-check" class="w-4 h-4"></i> Account Management
-                                </button>
+                        <aside class="w-full md:w-64 bg-[#130d0b] border-r border-[#2d1b14] p-6 flex flex-col justify-between shrink-0 shadow-xl">
+                            <div class="space-y-2">
+                                <p class="text-[10px] uppercase tracking-widest text-[#c8a27c] font-bold mb-4 px-3">Lounge Navigation</p>
+                                <nav class="space-y-1">
+                                    <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='FEED' ? 'bg-[#2d1b14] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#e1d7cf] hover:text-[#fff4e8] hover:bg-[#1c1310]'}"">
+                                        <i data-lucide="compass" class="w-4 h-4"></i> The Main Lounge
+                                    </button>
+                                    <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d1b14] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#e1d7cf] hover:text-[#fff4e8] hover:bg-[#1c1310]'}"">
+                                        <i data-lucide="pen-tool" class="w-4 h-4"></i> Write Article
+                                    </button>
+                                    <button onclick="navigateTo('COMMUNITY')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='COMMUNITY' ? 'bg-[#2d1b14] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#e1d7cf] hover:text-[#fff4e8] hover:bg-[#1c1310]'}"">
+                                        <i data-lucide="users" class="w-4 h-4"></i> The Community
+                                    </button>
+                                    <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d1b14] text-[#fddcb5] border-l-2 border-[#c8a27c]' : 'text-[#e1d7cf] hover:text-[#fff4e8] hover:bg-[#1c1310]'}"">
+                                        <i data-lucide="shield-check" class="w-4 h-4"></i> Account Management
+                                    </button>
+                                </nav>
                             </div>
-                            <div class="p-4 bg-[#120c0a] rounded-lg border border-[#2d1e18] text-center mt-6">
-                                <i data-lucide="bean" class="w-4 h-4 text-[#c8a27c] mx-auto mb-1.5 animate-pulse"></i>
-                                <span class="text-[11px] text-[#a38a75] italic block">Table reserved for @${state.profile.username}</span>
+                            <div class="p-4 bg-[#0c0806] rounded-xl border border-[#2d1b14] text-center mt-6">
+                                <i data-lucide="bean" class="w-4 h-4 text-[#c8a27c] mx-auto mb-2 animate-pulse"></i>
+                                <span class="text-[11px] text-[#fff4e8] block font-mono">Booth Identity Active:</span>
+                                <span class="text-xs text-[#fddcb5] font-semibold block mt-0.5">@${state.profile.username}</span>
                             </div>
                         </aside>
 
-                        <!-- Dynamic Central Component Core View -->
-                        <main class="flex-1 p-6 md:p-8 max-w-5xl w-full mx-auto overflow-hidden" id="view-target"></main>
+                        <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden" id="view-target"></main>
                     </div>
                 </div>`;
 
             const target = document.getElementById('view-target');
 
-            // VIEW 2: THE MAIN LOUNGE (FEED & HASHTAG MATRIX)
+            // VIEW 2: THE MAIN LOUNGE (FEED VIEW WITH UPDATED FILTER DROPDOWN MATRIX)
             if (state.currentView === 'FEED') {
-                let activeLabel = hashtags.find(h => h.id === state.activeFilter)?.label || 'All Categories';
-                if (state.activeFilter === 'Trending') activeLabel = 'Trending';
-
                 let dropdownMenuHtml = hashtags.map(h => `
                     <button onclick="state.activeFilter='${h.id}'; state.isCategoryDropdownOpen=false; render();" 
-                        class="w-full text-left px-4 py-2.5 text-xs font-mono tracking-wide transition-colors flex justify-between items-center ${state.activeFilter === h.id ? 'bg-[#2d1e18] text-[#fddcb5]' : 'text-[#a38a75] hover:text-[#f5f0eb] hover:bg-[#231814]'}"">
-                        <span>${h.tag} <span class="text-[11px] text-[#6e5347] ml-1">(${h.label})</span></span>
+                        class="w-full text-left px-4 py-3 text-xs font-mono tracking-wide transition-colors flex justify-between items-center ${state.activeFilter === h.id ? 'bg-[#2d1b14] text-[#fff4e8]' : 'text-[#fff4e8] hover:text-[#fff4e8] hover:bg-[#1c1310]'}"">
+                        <span>${h.tag} <span class="text-[11px] text-[#c8a27c] ml-1.5">(${h.label})</span></span>
                         ${state.activeFilter === h.id ? '<i data-lucide="check" class="w-3 h-3 text-[#c8a27c]"></i>' : ''}
                     </button>`).join('');
 
@@ -174,196 +239,206 @@
                     : state.activeFilter === 'Trending' ? [articles[0], articles[2]] : articles.filter(a => a.category === state.activeFilter);
 
                 let feedCards = filtered.map(art => `
-                    <div onclick="state.selectedArticleId='${art.id}'; setView('READER');" class="group bg-[#1a120f] border border-[#2d1e18] p-6 rounded-xl hover:border-[#4a3329] transition-all duration-300 cursor-pointer flex flex-col justify-between">
+                    <div onclick="state.selectedArticleId='${art.id}'; navigateTo('READER');" class="group bg-[#130d0b] border border-[#2d1b14] p-6 rounded-xl hover:border-[#4a2e22] transition-all duration-300 cursor-pointer flex flex-col justify-between shadow-md">
                         <div>
                             <div class="flex items-center gap-3 mb-3">
-                                <span class="text-xs font-mono font-semibold tracking-wider text-[#c8a27c] bg-[#2d1e18] px-2.5 py-0.5 rounded">${art.category}</span>
-                                <span class="text-xs text-[#a38a75] flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${art.readTime}</span>
+                                <span class="text-xs font-mono font-bold tracking-wider text-[#c8a27c] bg-[#1c1310] px-2.5 py-0.5 rounded border border-[#2d1b14]">${art.category}</span>
+                                <span class="text-xs text-[#fff4e8] flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5 text-[#c8a27c]"></i> ${art.readTime}</span>
                             </div>
                             <h2 class="text-2xl font-bold mb-2 group-hover:text-[#fddcb5] transition-colors">${art.title}</h2>
                             <p class="font-serif italic text-sm text-[#c8a27c] mb-3">${art.subtitle}</p>
-                            <p class="text-sm text-[#a38a75] font-light line-clamp-2 leading-relaxed">${art.snippet}</p>
+                            <p class="text-sm text-[#fff4e8] font-light leading-relaxed line-clamp-3">${art.snippet}</p>
                         </div>
-                        <div class="mt-5 pt-4 border-t border-[#231814] flex justify-between items-center text-xs text-[#a38a75]">
-                            <span class="group-hover:text-[#c8a27c] flex items-center gap-1 transition-colors"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Read Deeply</span>
-                            <span class="flex items-center gap-1"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> Discuss</span>
+                        <div class="mt-6 pt-4 border-t border-[#1c1310] flex justify-between items-center text-xs text-[#c8a27c] font-medium">
+                            <span class="group-hover:text-[#fff4e8] flex items-center gap-1.5 transition-colors"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Read Deeply</span>
+                            <span class="text-[#e1d7cf] flex items-center gap-1"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> Discuss</span>
                         </div>
                     </div>`).join('');
 
                 target.innerHTML = `
                     <div class="space-y-6 animate-fadeIn">
-                        <!-- Category Header Dropdown Matrix Layout -->
-                        <div class="border-b border-[#2d1e18] pb-4 flex items-center gap-3 relative z-40">
+                        <div class="border-b border-[#2d1b14] pb-4 flex items-center gap-3 relative z-40">
                             <button onclick="state.activeFilter='Trending'; state.isCategoryDropdownOpen=false; render();" 
-                                class="px-4 py-2 rounded-md text-xs font-medium tracking-wide transition-all ${state.activeFilter==='Trending'?'bg-[#c8a27c] text-[#120c0a]':'bg-[#1a120f] text-[#a38a75] border border-[#2d1e18]'}"">
+                                class="px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${state.activeFilter==='Trending'?'bg-[#c8a27c] text-[#0c0806]':'bg-[#130d0b] text-[#fff4e8] border border-[#2d1b14]'}"">
                                 Trending
                             </button>
                             
                             <div class="relative">
                                 <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" 
-                                    class="px-4 py-2 rounded-md text-xs font-medium tracking-wide bg-[#1a120f] text-[#fddcb5] border border-[#36251e] hover:border-[#c8a27c] flex items-center gap-2 transition-all">
+                                    class="px-4 py-2.5 rounded-lg text-xs font-bold bg-[#130d0b] text-[#fff4e8] border border-[#2d1b14] hover:border-[#c8a27c] flex items-center gap-2 transition-all">
                                     <i data-lucide="hash" class="w-3.5 h-3.5 text-[#c8a27c]"></i>
-                                    <span>All Categories: <span class="text-[#c8a27c]">${state.activeFilter === 'Trending' ? '#All' : state.activeFilter}</span></span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 text-[#a38a75] transition-transform ${state.isCategoryDropdownOpen?'rotate-180':''}"></i>
+                                    <span>All Categories: <span class="text-[#fddcb5] font-mono">${state.activeFilter === 'Trending' ? '#All' : state.activeFilter}</span></span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 text-[#c8a27c] transition-transform ${state.isCategoryDropdownOpen?'rotate-180':''}"></i>
                                 </button>
                                 
-                                <!-- Dropdown Drawer panel container -->
-                                <div class="absolute left-0 mt-2 w-56 bg-[#1a120f] border border-[#2d1e18] rounded-lg shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
+                                <div class="absolute left-0 mt-2 w-64 bg-[#130d0b] border border-[#2d1b14] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
                                     ${dropdownMenuHtml}
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Core Article List Display Container -->
                         <div class="grid grid-cols-1 gap-6 pt-2">
-                            ${feedCards || '<div class="p-12 text-center text-[#a38a75] border border-dashed border-[#2d1e18] rounded-xl font-serif italic text-sm">No written essays discovered matching this tag category yet.</div>'}
+                            ${feedCards || '<div class="p-12 text-center text-[#e1d7cf] border border-dashed border-[#2d1b14] rounded-xl font-serif italic text-sm">No written entries match this category tag selection.</div>'}
                         </div>
                     </div>`;
             }
 
-            // VIEW 3: INSTAGRAM-STYLE PROFILE PAGE
+            // VIEW 3: INSTAGRAM-STYLE PROFILE PAGE VIEW (BUG FIX COMPLETED)
             else if (state.currentView === 'PROFILE') {
                 target.innerHTML = `
                     <div class="max-w-xl mx-auto py-2 space-y-10 animate-fadeIn">
                         <div class="flex flex-col items-center text-center">
-                            <div class="w-24 h-24 rounded-full bg-[#1a120f] border-2 border-[#c8a27c] flex items-center justify-center text-3xl font-serif shadow-2xl text-[#fddcb5]">
-                                ${state.profile.name.charAt(0)}
+                            <div class="w-24 h-24 rounded-full bg-[#130d0b] border-2 border-[#c8a27c] flex items-center justify-center text-3xl font-serif shadow-2xl text-[#fddcb5] tracking-wider">
+                                ${state.profile.name ? state.profile.name.substring(0,2).toUpperCase() : 'AN'}
                             </div>
-                            <label class="mt-3 text-xs text-[#c8a27c] hover:underline cursor-pointer tracking-wide font-medium">
-                                Change profile photo
-                                <input type="file" class="hidden" onchange="alert('Simulated File Selection Triggered');"/>
+                            <label class="mt-3 text-xs text-[#c8a27c] hover:text-[#fff4e8] hover:underline cursor-pointer tracking-wide font-semibold flex items-center gap-1.5">
+                                <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Change profile photo
+                                <input type="file" class="hidden" onchange="alert('Local system file upload stream hooked successfully.');"/>
                             </label>
                         </div>
 
-                        <div class="space-y-5 bg-[#1a120f] border border-[#2d1e18] p-6 rounded-xl">
+                        <form onsubmit="handleProfileSave(event)" class="space-y-5 bg-[#130d0b] border border-[#2d1b14] p-6 rounded-xl shadow-xl">
                             <div>
-                                <label class="text-[10px] uppercase tracking-wider text-[#a38a75] font-bold block mb-1.5">Name</label>
-                                <input type="text" id="prof-name" value="${state.profile.name}" class="w-full bg-[#120c0a] border border-[#2d1e18] rounded-md px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c]" />
+                                <label class="text-xs uppercase tracking-wider text-[#fff4e8] font-bold block mb-2">Display Name</label>
+                                <input type="text" id="edit-name" required value="${state.profile.name}" class="w-full bg-[#0c0806] border border-[#2d1b14] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] font-medium focus:outline-none focus:border-[#c8a27c] transition-colors" />
                             </div>
                             <div>
-                                <label class="text-[10px] uppercase tracking-wider text-[#a38a75] font-bold block mb-1.5">Username</label>
+                                <label class="text-xs uppercase tracking-wider text-[#fff4e8] font-bold block mb-2">Username Flag</label>
                                 <div class="relative flex items-center">
-                                    <span class="absolute left-4 text-xs font-medium text-[#c8a27c]">@</span>
-                                    <input type="text" id="prof-user" value="${state.profile.username}" class="w-full bg-[#120c0a] border border-[#2d1e18] rounded-md pl-8 pr-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c]" />
+                                    <span class="absolute left-4 text-xs font-bold font-mono text-[#c8a27c]">@</span>
+                                    <input type="text" id="edit-username" required value="${state.profile.username}" class="w-full bg-[#0c0806] border border-[#2d1b14] rounded-lg pl-9 pr-4 py-2.5 text-sm text-[#f5f0eb] font-mono focus:outline-none focus:border-[#c8a27c] transition-colors" />
                                 </div>
                             </div>
                             <div>
-                                <div class="flex justify-between items-center mb-1.5">
-                                    <label class="text-[10px] uppercase tracking-wider text-[#a38a75] font-bold block">Bio</label>
-                                    <span class="text-[10px] text-[#6e5347] font-mono">${state.profile.bio.length} / 150</span>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-xs uppercase tracking-wider text-[#fff4e8] font-bold block">Author Biography</label>
+                                    <span class="text-xs text-[#c8a27c] font-mono">${state.profile.bio.length} / 150</span>
                                 </div>
-                                <textarea id="prof-bio" maxlength="150" rows="3" class="w-full bg-[#120c0a] border border-[#2d1e18] rounded-md px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c] resize-none leading-relaxed">${state.profile.bio}</textarea>
+                                <textarea id="edit-bio" maxlength="150" rows="3" class="w-full bg-[#0c0806] border border-[#2d1b14] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c] resize-none leading-relaxed">${state.profile.bio}</textarea>
                             </div>
-                            <button onclick="state.profile.name=document.getElementById('prof-name').value; state.profile.username=document.getElementById('prof-user').value.replace('@',''); state.profile.bio=document.getElementById('prof-bio').value; alert('Profile Updated Successfully'); setView('FEED');" 
-                                class="w-full py-2.5 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#120c0a] rounded-md font-semibold text-xs uppercase tracking-wider transition-all mt-2">
+                            <button type="submit" class="w-full py-3 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-wider transition-all mt-2 shadow-md">
                                 Save Profile Changes
                             </button>
-                        </div>
+                        </form>
 
-                        <!-- Published / Draft Sub Grid Grid History Framework -->
-                        <div class="border-t border-[#2d1e18] pt-6">
-                            <div class="flex justify-center gap-8 text-xs font-semibold uppercase tracking-wider mb-4">
-                                <span class="text-[#fddcb5] border-b-2 border-[#c8a27c] pb-2 cursor-pointer flex items-center gap-1"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Published (2)</span>
-                                <span class="text-[#a38a75] hover:text-[#f5f0eb] pb-2 cursor-pointer flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> Drafts (1)</span>
+                        <div class="border-t border-[#2d1b14] pt-6">
+                            <div class="flex justify-center gap-8 text-xs font-bold uppercase tracking-widest mb-6">
+                                <span class="text-[#fddcb5] border-b-2 border-[#c8a27c] pb-2 cursor-pointer flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Published Posts (2)</span>
+                                <span class="text-[#fff4e8]/60 hover:text-[#fff4e8] pb-2 cursor-pointer flex items-center gap-1.5"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> Workspace Drafts (1)</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="p-4 bg-[#1a120f] border border-[#2d1e18] rounded-lg hover:border-[#36251e] transition-colors">
-                                    <div class="text-xs font-medium text-[#fddcb5] truncate">The Spatial Design of Virtual Worlds</div>
-                                    <span class="text-[10px] text-[#a38a75] block mt-1">June 2026</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="p-4 bg-[#130d0b] border border-[#2d1b14] rounded-xl flex flex-col justify-between">
+                                    <div class="text-sm font-bold text-[#f5f0eb] truncate">The Spatial Design of Virtual Worlds</div>
+                                    <span class="text-[10px] text-[#c8a27c] font-mono mt-2">Active Log Entry: June 2026</span>
                                 </div>
-                                <div class="p-4 bg-[#1a120f] border border-[#2d1e18] rounded-lg hover:border-[#36251e] transition-colors">
-                                    <div class="text-xs font-medium text-[#fddcb5] truncate">The Analytical Mind on the Pitch</div>
-                                    <span class="text-[10px] text-[#a38a75] block mt-1">May 2026</span>
+                                <div class="p-4 bg-[#130d0b] border border-[#2d1b14] rounded-xl flex flex-col justify-between">
+                                    <div class="text-sm font-bold text-[#f5f0eb] truncate">The Analytical Mind on the Pitch</div>
+                                    <span class="text-[10px] text-[#c8a27c] font-mono mt-2">Active Log Entry: May 2026</span>
                                 </div>
                             </div>
                         </div>
                     </div>`;
             }
 
-            // VIEW 4: ADVANCED WRITER'S DASHBOARD
+            // VIEW 4: ADVANCED WRITER'S DASHBOARD (BUG FIX CHAT LOOP COMPLETED)
             else if (state.currentView === 'WRITE') {
+                let chatBubblesHtml = state.aiChatHistory.map(msg => `
+                    <div class="p-3 rounded-lg text-xs leading-relaxed ${msg.sender === 'user' ? 'bg-[#2d1b14] text-[#fff4e8] border border-[#4a2e22] ml-4' : 'bg-[#0c0806] text-[#fff4e8] border border-[#2d1b14] mr-4'}">
+                        <b class="block text-[10px] uppercase tracking-wider mb-1 font-mono ${msg.sender==='user'?'text-[#c8a27c]':'text-[#fddcb5]'}">${msg.sender === 'user' ? 'You' : 'Barista Bot'}</b>
+                        <span class="whitespace-pre-line">${msg.text}</span>
+                    </div>`).join('');
+
                 target.innerHTML = `
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start animate-fadeIn">
                         <div class="lg:col-span-2 space-y-5">
                             <div class="space-y-3">
-                                <input type="text" placeholder="Title your composition..." class="w-full bg-transparent border-b border-[#2d1e18] pb-3 text-3xl font-bold font-serif text-[#fddcb5] focus:outline-none focus:border-[#c8a27c] placeholder:text-[#2d1e18]" />
-                                <input type="text" placeholder="Add an elegant subtitle..." class="w-full bg-transparent border-b border-[#2d1e18] pb-2 text-sm font-serif italic text-[#c8a27c] focus:outline-none focus:border-[#2d1e18] placeholder:text-[#231814]" />
+                                <input type="text" placeholder="Title your long-form composition..." class="w-full bg-transparent border-b border-[#2d1b14] pb-3 text-3xl font-bold font-serif text-[#fddcb5] focus:outline-none focus:border-[#c8a27c] placeholder:text-[#2d1b14]" />
+                                <input type="text" placeholder="Add a sophisticated subtitle..." class="w-full bg-transparent border-b border-[#2d1b14] pb-2 text-sm font-serif italic text-[#c8a27c] focus:outline-none focus:border-[#2d1b14] placeholder:text-[#231814]" />
                             </div>
 
-                            <!-- Drag & Drop Media Box Placeholder -->
-                            <div class="border border-dashed border-[#36251e] hover:border-[#c8a27c] rounded-xl p-6 text-center transition-colors bg-[#1a120f]/30 group cursor-pointer">
-                                <i data-lucide="image-plus" class="w-6 h-6 text-[#a38a75] group-hover:text-[#c8a27c] mx-auto mb-1.5 transition-colors"></i>
-                                <p class="text-xs text-[#a38a75]">Drag header artwork imagery here or click to assign a canvas</p>
+                            <div class="border border-dashed border-[#3d271e] hover:border-[#c8a27c] rounded-xl p-6 text-center transition-all bg-[#130d0b]/40 group cursor-pointer">
+                                <i data-lucide="image-plus" class="w-6 h-6 text-[#c8a27c] group-hover:scale-110 transition-transform mx-auto mb-2"></i>
+                                <p class="text-xs text-[#fff4e8] font-medium">Drag header media artwork here or click to assign a module</p>
                             </div>
 
-                            <textarea rows="12" placeholder="Begin weaving your thoughts into paragraphs..." class="w-full bg-[#1a120f] border border-[#2d1e18] rounded-xl p-5 text-sm text-[#f5f0eb] leading-relaxed focus:outline-none focus:border-[#c8a27c] resize-none placeholder:text-[#36251e]"></textarea>
+                            <textarea rows="11" placeholder="Begin weaving your thoughts into paragraphs..." class="w-full bg-[#130d0b] border border-[#2d1b14] rounded-xl p-5 text-sm text-[#f5f0eb] leading-relaxed focus:outline-none focus:border-[#c8a27c] resize-none placeholder:text-[#3d271e]"></textarea>
                             
                             <div class="flex justify-end gap-3">
-                                <button onclick="setView('FEED')" class="px-5 py-2 rounded border border-[#2d1e18] text-xs font-medium text-[#a38a75] hover:text-[#f5f0eb] hover:bg-[#1a120f] transition-all">Save Draft</button>
-                                <button onclick="alert('Article distributed out to lounge feeds successfully.'); setView('FEED');" class="px-5 py-2 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#120c0a] text-xs font-bold rounded tracking-wide transition-all">Publish Narrative</button>
+                                <button onclick="navigateTo('FEED')" class="px-5 py-2.5 rounded-lg border border-[#2d1b14] text-xs font-semibold text-[#fff4e8] hover:bg-[#1c1310] transition-all">Save Draft Module</button>
+                                <button onclick="alert('Composition published successfully into structural indexes.'); navigateTo('FEED');" class="px-5 py-2.5 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#0c0806] text-xs font-bold rounded-lg tracking-wider uppercase transition-all">Publish Narrative</button>
                             </div>
                         </div>
 
-                        <!-- Right Panel: AI Barista Bot -->
-                        <aside class="bg-[#1a120f] border border-[#2d1e18] rounded-xl p-5 space-y-4">
-                            <h3 class="text-sm font-bold text-[#fddcb5] flex items-center gap-2 border-b border-[#2d1e18] pb-2"><i data-lucide="sparkles" class="w-4 h-4 text-[#c8a27c]"></i> AI Barista Bot</h3>
-                            <p class="text-xs text-[#a38a75] leading-relaxed">Need help structuring? Let the barista suggest an organic, long-form layout setup based on your parameters.</p>
-                            <input type="text" id="ai-in" placeholder="e.g., Focus on game pacing analysis" class="w-full bg-[#120c0a] border border-[#2d1e18] rounded px-3 py-2 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c]" />
-                            <button onclick="document.getElementById('ai-res').innerText='☕ Barista Custom Framework Output:\\n1. The Vestibule: Introduce your user to the pacing constraints.\\n2. Extracting Value: Evaluate the contrast vectors using direct scene analysis.\\n3. The Dregs: Conclude with a lingering question about modern attention economics.';" 
-                                class="w-full py-2 bg-[#2d1e18] text-[#fddcb5] text-xs font-medium rounded border border-[#4a3329] hover:bg-[#36251e] transition-colors">
-                                Consult Barista
-                            </button>
-                            <div id="ai-res" class="bg-[#120c0a] border border-[#2d1e18] rounded p-3 text-[11px] text-[#a38a75] font-mono leading-relaxed whitespace-pre-line">Awaiting design signals...</div>
+                        <aside class="bg-[#130d0b] border border-[#2d1b14] rounded-xl p-4 flex flex-col h-[520px] justify-between shadow-2xl">
+                            <div class="space-y-3 flex flex-col h-full overflow-hidden">
+                                <h3 class="text-sm font-bold text-[#fddcb5] flex items-center gap-2 border-b border-[#2d1b14] pb-2 shrink-0">
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-[#c8a27c]"></i> AI Barista Bot
+                                </h3>
+                                
+                                <div id="chat-scroll-target" class="flex-1 overflow-y-auto space-y-3 pr-1 pb-2">
+                                    ${chatBubblesHtml}
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-[#2d1b14] flex gap-2 shrink-0">
+                                <input type="text" id="ai-chat-input" placeholder="Ask for outline layout scheme..." 
+                                    onkeydown="if(event.key==='Enter') handleSendAiPrompt();"
+                                    class="flex-1 bg-[#0c0806] border border-[#2d1b14] rounded-lg px-3 py-2 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#c8a27c] placeholder:text-[#5a4338]" />
+                                <button onclick="handleSendAiPrompt();" class="p-2 bg-[#c8a27c] hover:bg-[#b08e6b] text-[#0c0806] rounded-lg transition-colors">
+                                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
                         </aside>
                     </div>`;
+                
+                // Keep chat window locked to current base logs
+                const targetBox = document.getElementById('chat-scroll-target');
+                if(targetBox) targetBox.scrollTop = targetBox.scrollHeight;
             }
 
-            // VIEW 5: INTERACTIVE READER PAGE
+            // VIEW 5: INTERACTIVE READER PAGE VIEW MODULE
             else if (state.currentView === 'READER') {
                 const currentArticle = articles.find(a => a.id === state.selectedArticleId) || articles[0];
                 
                 let beansHtml = '';
                 for (let i = 1; i <= 5; i++) {
-                    beansHtml += `<i data-lucide="coffee" onclick="state.selectedBeanRating=${i}; render();" class="w-5 h-5 cursor-pointer transition-all active:scale-90 ${i <= state.selectedBeanRating ? 'text-[#c8a27c] fill-[#c8a27c]' : 'text-[#36251e]'}""></i>`;
+                    beansHtml += `<i data-lucide="coffee" onclick="state.selectedBeanRating=${i}; render();" class="w-5 h-5 cursor-pointer transition-all active:scale-90 ${i <= state.selectedBeanRating ? 'text-[#c8a27c] fill-[#c8a27c]' : 'text-[#2d1b14]'}""></i>`;
                 }
 
                 target.innerHTML = `
                     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start animate-fadeIn">
-                        <!-- Left Content Core -->
-                        <div class="lg:col-span-3 space-y-6 bg-[#1a120f]/30 border border-[#2d1e18]/40 p-6 md:p-8 rounded-2xl">
+                        <div class="lg:col-span-3 space-y-6 bg-[#130d0b]/40 border border-[#2d1b14]/70 p-6 md:p-8 rounded-2xl shadow-xl">
                             <div class="space-y-2">
-                                <span class="text-xs font-mono uppercase text-[#c8a27c] bg-[#2d1e18] px-2.5 py-0.5 rounded inline-block">${currentArticle.category}</span>
+                                <span class="text-xs font-mono font-bold tracking-wider text-[#c8a27c] bg-[#1c1310] px-2.5 py-0.5 rounded border border-[#2d1b14] inline-block">${currentArticle.category}</span>
                                 <h1 class="text-3xl md:text-4xl font-bold leading-tight">${currentArticle.title}</h1>
                                 <p class="font-serif italic text-md text-[#c8a27c]">${currentArticle.subtitle}</p>
                             </div>
-                            <hr class="border-[#2d1e18]" />
-                            <div class="text-base text-[#f5f0eb]/90 font-light space-y-5 leading-relaxed">
+                            <hr class="border-[#2d1b14]" />
+                            <div class="text-base text-[#f5f0eb] font-light space-y-5 leading-relaxed">
                                 <p>${currentArticle.snippet}</p>
-                                <p>Deliberate exploration demands an absence of urgency. When reading mirrors artisanal production rather than high-frequency ingestion, processing changes. We step backwards from hyper-optimized consumption indexes to re-engage with individual perspective clusters over a clean brew.</p>
+                                <p>Deliberate analytical configuration requires an intentional reduction of system speed indexes. By prioritizing dense structured insights over transactional notification models, we shift human processing parameters. This digital lounge isolates contextual patterns from general stream interference loops, treating composition as a slow craft process.</p>
                             </div>
 
-                            <!-- Interactive Beans Section -->
-                            <div class="mt-10 p-5 bg-[#1a120f] border border-[#2d1e18] rounded-xl space-y-4">
-                                <h4 class="text-xs uppercase tracking-wider font-semibold text-[#a38a75]">Rate this Brew</h4>
-                                <div class="flex gap-1.5">${beansHtml}</div>
-                                <div class="pt-1">
-                                    <span class="text-[11px] text-[#a38a75] block mb-2">Taste Tags assigned by community criteria:</span>
-                                    <div class="flex gap-2">
-                                        ${['Deep Blend', 'Espresso Shot', 'Smooth Roast'].map(tag => `<button onclick="alert('Tag added to index');" class="px-2.5 py-1 bg-[#2d1e18] border border-[#36251e] rounded text-[11px] text-[#fddcb5] hover:border-[#c8a27c] transition-colors">${tag}</button>`).join('')}
+                            <div class="mt-10 p-5 bg-[#130d0b] border border-[#2d1b14] rounded-xl space-y-4 shadow-inner">
+                                <h4 class="text-xs uppercase tracking-wider font-bold text-[#fff4e8]">Rate this Brew Formulation</h4>
+                                <div class="flex gap-2">${beansHtml}</div>
+                                <div class="pt-2 border-t border-[#1c1310]">
+                                    <span class="text-xs text-[#fff4e8] block mb-2 font-medium">Assign a contextual taste index flag descriptor:</span>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${['Deep Blend', 'Espresso Shot', 'Smooth Roast'].map(tag => `<button onclick="alert('Flag marker index updated.');" class="px-3 py-1.5 bg-[#1c1310] border border-[#2d1b14] rounded-md text-xs font-medium text-[#fddcb5] hover:border-[#c8a27c] transition-colors">${tag}</button>`).join('')}
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Right Sidebar Panel: Side Order Ambient Controls -->
-                        <aside class="bg-[#1a120f] border border-[#2d1e18] rounded-xl p-5 space-y-4">
-                            <h3 class="text-sm font-bold text-[#fddcb5] flex items-center gap-2 border-b border-[#2d1e18] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#c8a27c]"></i> Side Order</h3>
-                            <p class="text-xs text-[#a38a75] leading-relaxed">Layer low background audio tracks for maximum distraction-free isolation.</p>
-                            <div class="space-y-2">
+                        <aside class="bg-[#130d0b] border border-[#2d1b14] rounded-xl p-5 space-y-4 shadow-xl">
+                            <h3 class="text-sm font-bold text-[#fddcb5] flex items-center gap-2 border-b border-[#2d1b14] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#c8a27c]"></i> Side Order</h3>
+                            <p class="text-xs text-[#fff4e8] leading-relaxed">Isolate environmental sensory layers to maximize text parsing acceleration loops.</p>
+                            <div class="space-y-2 pt-1">
                                 ${['Café Rain', 'Soft Jazz Vinyl'].map(track => `
-                                    <div class="flex justify-between items-center p-2.5 bg-[#120c0a] border border-[#2d1e18] rounded">
-                                        <span class="text-xs ${state.activeAmbientTrack===track?'text-[#c8a27c] font-medium':'text-[#f5f0eb]'}"">${track}</span>
-                                        <button onclick="state.activeAmbientTrack=state.activeAmbientTrack==='${track}'?null:'${track}'; render();" class="p-1 bg-[#2d1e18] hover:bg-[#36251e] rounded text-[#c8a27c]">
+                                    <div class="flex justify-between items-center p-3 bg-[#0c0806] border border-[#2d1b14] rounded-xl shadow-md">
+                                        <span class="text-xs font-medium ${state.activeAmbientTrack===track?'text-[#c8a27c]':'text-[#fff4e8]'}"">${track}</span>
+                                        <button onclick="state.activeAmbientTrack=state.activeAmbientTrack==='${track}'?null:'${track}'; render();" class="p-1.5 bg-[#1c1310] hover:bg-[#2d1b14] rounded-md text-[#c8a27c] transition-colors border border-[#2d1b14]">
                                             <i data-lucide="${state.activeAmbientTrack==='${track}'?'pause':'play'}" class="w-3.5 h-3.5"></i>
                                         </button>
                                     </div>`).join('')}
@@ -372,18 +447,18 @@
                     </div>`;
             }
 
-            // BLANK FALLBACK VIEWS (COMMUNITY & ACCOUNT MANAGEMENT)
+            // BLANK PLACEHOLDER ROUTE VIEWS (COMMUNITY & ACCOUNT SETTINGS)
             else {
                 target.innerHTML = `
-                    <div class="p-12 text-center text-[#a38a75] border border-dashed border-[#2d1e18] rounded-xl font-serif italic text-sm animate-fadeIn">
-                        This corner of the café lounge view (${state.currentView}) is currently under construction.
+                    <div class="p-12 text-center text-[#fff4e8] border border-dashed border-[#2d1b14] rounded-xl font-serif italic text-sm bg-[#130d0b] animate-fadeIn">
+                        This specific sector of the café lounge platform configuration (${state.currentView}) is currently undergoing standard design optimization cycles.
                     </div>`;
             }
 
             lucide.createIcons();
         }
 
-        // Initialize application instance on runtime mount
+        // --- ROOT ENTRY RUNTIME MOUNT TRIGGER ---
         render();
     </script>
 </body>
