@@ -19,13 +19,13 @@
             color: #fbbf24; 
         }
         
-        /* Espresso Theme Smooth Scrollbar Layout */
+        /* Espresso Theme Custom Scrollbar Overrides */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #16100d; }
         ::-webkit-scrollbar-thumb { background: #453026; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
         
-        /* Hardware Accelerated Smooth UI Animations */
+        /* Hardware Accelerated UI Animations */
         .animate-fadeIn {
             animation: fadeIn 0.2s ease-out forwards;
         }
@@ -42,12 +42,12 @@
         }
     </style>
 </head>
-<body class="min-h-screen relative overflow-x-hidden select-none selection:bg-[#fbbf24]/30 selection:text-white">
+<body class="min-h-screen relative overflow-x-hidden select-none">
 
     <div id="app" class="min-h-screen flex flex-col"></div>
 
     <script>
-        // --- SECURE DATA MATRIX DEHYDRATION & SYSTEM STATE RESTORE ---
+        // --- SECURE DATA MATRIX DEHYDRATION & BASELINE STORAGE SEEDING ---
         function bootstrapCoreEngine() {
             const isAuth = localStorage.getItem('anteiku_authenticated') === 'true';
             
@@ -60,11 +60,16 @@
             };
 
             const savedArticles = localStorage.getItem('anteiku_articles');
+            
+            // --- EMPTY FEED BUG FIX: COMPREHENSIVE INITIAL CAFE DATA STACK SEEDING ---
             const defaultArticles = [
                 { id: '1', title: 'The Spatial Design of Virtual Worlds', subtitle: 'Analyzing pacing, solitude, and architectural layout rules in modern open-world ecosystems.', readTime: '9 min read', category: '#Gaming', author: 'Ken Kaneki', body: 'To step inside a true virtual space is to accept an alternative pace. We dissect how minimal environments craft intentional narrative depth, pushing back against competitive metrics to cultivate personal headspace.' },
                 { id: '2', title: 'The Analytical Mind on the Pitch', subtitle: 'Tactical philosophy and the deep reading of space and geometric athletic arrays.', readTime: '7 min read', category: '#Sports', author: 'Alex Thorne', body: 'Modern sports setups mirror complex structural algorithms. Beyond physical execution lies a deep chess match written across manicured turf, prioritizing temporal mastery over brute physical acceleration.' },
-                { id: '3', title: 'Sipping Ink at Midnight', subtitle: 'A reflection on classic literary forms, education, and slow acquisition models.', readTime: '5 min read', category: '#Education', author: 'Suzuya', body: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct internal friction—a step back away from speed reading modules and rapid-fire video updates into quiet, concentrated study nodes.' }
+                { id: '3', title: 'Sipping Ink at Midnight', subtitle: 'A reflection on classic literary forms, education, and slow acquisition models.', readTime: '5 min read', category: '#Education', author: 'Suzuya', body: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct internal friction—a step back away from speed reading modules and rapid-fire video updates into quiet, concentrated study nodes.' },
+                { id: '4', title: 'The Velocity of Digital Broadcasts', subtitle: 'Unpacking breaking news cycles, information fatigue, and verified editorial networks.', readTime: '4 min read', category: '#News', author: 'Touka Kirishima', body: 'The constant stream of breaking alerts often dilutes deep contextual truth. In this essay, we look at how rapid news distribution reshapes editorial standards and why returning to decentralized, slower verified print structures protects civic awareness.' },
+                { id: '5', title: 'The Baseline Architecture of Espresso Alchemy', subtitle: 'A deep dive into extraction yields, temperature control, and thermal dynamics.', readTime: '6 min read', category: '#GeneralKnowledge', author: 'Manager Yoshimura', body: 'Water meeting ground coffee at exactly 9 bar atmospheric pressure is a precise science experiment. We track how pressure variables, organic chemistry arrays, and regional water mineral scaling curves impact the final beverage composition.' }
             ];
+            
             const articles = savedArticles ? JSON.parse(savedArticles) : defaultArticles;
             if(!savedArticles) localStorage.setItem('anteiku_articles', JSON.stringify(defaultArticles));
 
@@ -90,8 +95,8 @@
                 selectedArticleId: '1',
                 writerSelectedCategory: 'Gaming',
                 
-                // UNBLOCKABLE INLINE MODAL WINDOW MANAGERS (NO BROWSER NATIVE POP-UPS)
-                customToast: { show: false, title: '', message: '', status: 'info' },
+                // UNBLOCKABLE INLINE MODAL WINDOW LAYOUT CONTROLLERS
+                customToast: { show: false, title: '', message: '' },
                 showRewardModal: false,
                 
                 aiChatHistory: [
@@ -100,10 +105,10 @@
             };
         }
 
-        // --- GLOBAL ROOT APP STATE INSTANCE ---
+        // --- GLOBAL ROOT STATE DECLARATION ---
         let state = bootstrapCoreEngine();
 
-        const hashtagCategories = [
+        const categories = [
             { id: '#All', label: 'All Categories', tag: '#All' },
             { id: '#Gaming', label: 'Gaming', tag: '#Gaming' },
             { id: '#Sports', label: 'Sports', tag: '#Sports' },
@@ -112,9 +117,9 @@
             { id: '#GeneralKnowledge', label: 'General Knowledge', tag: '#GeneralKnowledge' }
         ];
 
-        // --- CUSTOM INLINE ALERTS (REPLACES BROWSER ALERT POPUPS) ---
-        function displayInlineToast(title, message, status = 'info') {
-            state.customToast = { show: true, title, message, status };
+        // --- TOAST MODAL INLINE HANDLER (ELIMINATES BROWSER POP-UP LOCKS) ---
+        function triggerInlineToast(title, message) {
+            state.customToast = { show: true, title, message };
             render();
             setTimeout(() => {
                 state.customToast.show = false;
@@ -122,7 +127,7 @@
             }, 4000);
         }
 
-        // --- ROUTING ENGINE CONTEXTS ---
+        // --- CORE NAVIGATIONAL DISPATCHER ---
         function navigateTo(view) {
             state.currentView = state.isAuthenticated ? view : 'LANDING';
             state.isCategoryDropdownOpen = false;
@@ -131,13 +136,13 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- CRYPTO AUTH INTERACTION UTILITIES ---
+        // --- SECURE STORAGE LOG-IN MANAGEMENT HANDLERS ---
         function handleSignIn(e) {
             if (e) e.preventDefault();
             state.isAuthenticated = true;
             localStorage.setItem('anteiku_authenticated', 'true');
             navigateTo('FEED');
-            displayInlineToast('Session Initiated', 'Welcome back to your coffee booth table workspace.', 'success');
+            triggerInlineToast('Authorization Succeeded', 'Your table space token has been validated.');
         }
 
         function handleSignOut() {
@@ -146,7 +151,7 @@
             navigateTo('LANDING');
         }
 
-        // --- ACCOUNT METRICS & PROFILE SAVE ENGINES ---
+        // --- ACCOUNT MANAGEMENT CORE SYNCHRONIZERS ---
         function handleProfileSave(e) {
             if (e) e.preventDefault();
             state.profile.name = document.getElementById('edit-name').value;
@@ -155,11 +160,11 @@
             
             localStorage.setItem('anteiku_profile', JSON.stringify(state.profile));
             executeIncomingNotificationSimulation('follower', null);
-            displayInlineToast('Profile Synced', 'Your creator blueprint variables have been updated.', 'success');
+            triggerInlineToast('Local Ledger Mutated', 'Your profile adjustments are safely saved to local cache maps.');
             navigateTo('ACCOUNT'); 
         }
 
-        // --- COMPOSITION SYSTEM MANAGEMENT ENGINE ---
+        // --- COMPOSITION DISPATCH ENGINE ---
         function handlePublishArticle(e) {
             if (e) e.preventDefault();
             const titleInput = document.getElementById('w-title').value.trim();
@@ -167,7 +172,7 @@
             const bodyInput = document.getElementById('w-body').value.trim();
             
             if (!titleInput || !bodyInput) {
-                displayInlineToast('Validation Failed', 'Both title and content body segments are mandatory requirements.', 'error');
+                triggerInlineToast('Validation Error', 'Both title and content body lines must be fully written.');
                 return;
             }
 
@@ -185,11 +190,11 @@
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
             
             executeIncomingNotificationSimulation('like', titleInput);
-            displayInlineToast('Document Dispatched', `Article launched successfully under #${state.writerSelectedCategory}`, 'success');
+            triggerInlineToast('Article Synchronized', `New post launched under the ${newPost.category} classification banner.`);
             navigateTo('ACCOUNT');
         }
 
-        // --- DEEP AI BARISTA CONTEXT RESPONSE CODES ---
+        // --- HIGH INTEGRITY AI BARISTA STRATEGY FACTORIES ---
         function handleSendAiPrompt() {
             const inputElement = document.getElementById('ai-chat-input');
             if (!inputElement || !inputElement.value.trim()) return;
@@ -201,13 +206,13 @@
             let aiReply = '';
 
             if (normalized.includes('fifa') || normalized.includes('world cup') || normalized.includes('sports')) {
-                aiReply = `☕ **AI Barista Bespoke Sports Formula Strategy:**\n\n* **Bespoke Title:** *The Kinetic Grid: Micro-Geometry and Pressure Arrays at the World Cup.*\n* **Narrative Logic:** Analyze tactical spatial shifts. Zero in on the acute contrast of crowd silence against analytical field frameworks.\n* **Strategic Benchmarks:** \n  1. Mass emotional focus parameters.\n  2. Kinetic geometry: Reading passing channels.\n  3. Cultural residue when stadium architectures empty out.`;
+                aiReply = `☕ **AI Barista Custom Sports Architecture Output:**\n\n* **Bespoke Title:** *The Kinetic Grid: Mapping Space Allocation and Defensive Solitude at the World Cup.*\n* **Narrative Concept:** Analyze strategic empty zones on fields and contrast high-tension gameplay loops against architectural sports landscapes.\n* **Talking Points Array:** \n  1. The spatial geometry of low-block defensive sets.\n  2. Mass emotional focus shifts in international sports models.\n  3. Cultural footprint left behind when large event infrastructure sits empty.`;
             } else if (normalized.includes('gaming') || normalized.includes('game') || normalized.includes('play')) {
-                aiReply = `☕ **AI Barista Bespoke Gaming Architecture Framework:**\n\n* **Bespoke Title:** *Virtual Quietude: Spatial Mechanics for Introspective Play.*\n* **Narrative Logic:** Challenge standard structural loop metrics. Pinpoint why players intentionally break gameplay flow to observe rendering landscapes.\n* **Strategic Benchmarks:**\n  1. Escapes from constant notification tracking loops.\n  2. Environmental isolation mechanics in game layout design.\n  3. Aesthetic pacing as a cognitive reset medium.`;
+                aiReply = `☕ **AI Barista Custom Gaming Framework Output:**\n\n* **Bespoke Title:** *Virtual Quietude: Evaluating Atmospheric Silence Algorithms inside Open-World Ecosystems.*\n* **Narrative Concept:** Evaluate why players often walk away from competitive game tasks simply to look at the landscape rendering rules.\n* **Talking Points Array:**\n  1. Escaping constant overlay tracking metrics.\n  2. Micro-architectures of quiet towns in virtual maps.\n  3. Sound engineering rules that support deep player immersion.`;
             } else if (normalized.includes('education') || normalized.includes('learn') || normalized.includes('school')) {
-                aiReply = `☕ **AI Barista Educational Logic Engine Blueprint:**\n\n* **Bespoke Title:** *Cognitive Retention Scaffolding: Slow Processing vs Fluid Data Feeds.*\n* **Narrative Logic:** Build an analytical case for functional retention methods against high-frequency summary ingestion indexes.\n* **Strategic Benchmarks:**\n  1. The internal friction requirement for memory integration.\n  2. Synthesizing original critiques instead of algorithmic text replication.\n  3. Modern classroom attention design frameworks.`;
+                aiReply = `☕ **AI Barista Custom Educational Logic Output:**\n\n* **Bespoke Title:** *Cognitive Resistance Scaffolding: Dissecting Long-Form Focus in the Fast-Paced Summary Era.*\n* **Narrative Concept:** Make an analytical argument for slow study methods instead of relying on immediate bulleted text files.\n* **Talking Points Array:**\n  1. Why deep learning requires mental effort to remember info.\n  2. Designing interfaces that slow down high-speed reading habits.\n  3. Reclaiming long-term focus through quiet reading routines.`;
             } else {
-                aiReply = `☕ **AI Barista Standard Dynamic Writing Framework:**\n\n* **Bespoke Title:** *Deconstructing "${rawPrompt}": Contextual Realities and Signals.*\n* **Narrative Logic:** Unpack the structural mechanics and social undercurrents of this dynamic area.\n* **Strategic Benchmarks:**\n  1. Dissecting foundational biases.\n  2. Conceptual friction points within modern sub-cultural frameworks.\n  3. Synthesis methods for clear long-form resolution delivery.`;
+                aiReply = `☕ **AI Barista Core Writing Framework Output:**\n\n* **Bespoke Title:** *The Structural Undercurrents of "${rawPrompt}": A Cultural Examination.*\n* **Narrative Concept:** Deconstruct common assumptions surrounding this topic and evaluate its hidden systemic impacts.\n* **Talking Points Array:**\n  1. Surface-level misunderstandings versus operational reality.\n  2. The psychological changes this topic causes in online discourse loops.\n  3. Clear solutions to help restore analytical balance.`;
             }
 
             state.aiChatHistory.push({ sender: 'bot', text: aiReply });
@@ -217,15 +222,15 @@
             if(targetPane) targetPane.scrollTop = targetPane.scrollHeight;
         }
 
-        // --- NOTIFICATION STACK MUTATION DRIVERS ---
+        // --- REAL-TIME NOTIFICATION GENERATION CONTROLLERS ---
         function executeIncomingNotificationSimulation(type, title) {
             let message = '';
             if (type === 'rating') {
-                message = `Reader_99 rated your article '${title}' ${state.selectedBeanRating} Coffee Beans! ☕`;
+                message = `User123 rated your article '${title}' 5 Coffee Beans! ☕`;
             } else if (type === 'like') {
-                message = `Editor_Max liked your article '${title}'.`;
+                message = `User123 liked your article '${title}'.`;
             } else {
-                message = `Scholar_Beta started following your profile profile database.`;
+                message = `User123 started following your profile.`;
                 state.profile.followers += 1;
                 localStorage.setItem('anteiku_profile', JSON.stringify(state.profile));
             }
@@ -242,7 +247,7 @@
 
         function handleRatingSubmission() {
             if (state.selectedBeanRating === 0) {
-                displayInlineToast('Rating Empty', 'Please allocate a coffee bean rating scale point before submission.', 'error');
+                triggerInlineToast('Evaluation Empty', 'Please pick a rating value using the bean grid configuration.');
                 return;
             }
             const currentPost = state.databaseArticles.find(a => a.id === state.selectedArticleId) || state.databaseArticles[0];
@@ -253,12 +258,12 @@
             render();
         }
 
-        // --- CORE INTERFACE RECOMPILING PARSER ENGINE ---
+        // --- PLATFORM VIEW COMPILER ENGINE ---
         function render() {
             const app = document.getElementById('app');
             const unreadCount = state.notifications.filter(n => n.unread).length;
 
-            // --- UNBLOCKABLE COMPONENT 1: SIGN-IN FORCE INLINE OVERLAY MODAL ---
+            // --- MANDATORY SIGN-IN INLINE MODAL OVERLAY ---
             if (!state.isAuthenticated || state.currentView === 'LANDING') {
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative bg-[#0c0806]">
@@ -274,22 +279,22 @@
                                 <h1 class="text-4xl font-bold tracking-wide">Anteiku Hub</h1>
                                 <p class="text-md text-[#fbbf24] italic font-medium">Read deeply. Write freely.</p>
                                 <p class="text-xs text-[#f5f0eb]/70 max-w-sm mx-auto font-light pt-1 leading-relaxed">
-                                    Sign-in mandatory overlay checkpoint gateway. All session tokens are committed to local disk storage matrices.
+                                    Sign-in mandatory overlay screen. Your authorization credentials persist natively across reloads.
                                 </p>
                             </div>
 
                             <form onsubmit="handleSignIn(event)" class="space-y-4 pt-2">
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Cafe Identifier (Email)</label>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Cafe ID (Email)</label>
                                     <input type="email" required placeholder="writer@anteiku.com" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:border-[#fbbf24] transition-colors font-medium" />
                                 </div>
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Access Authorization Password</label>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Security Token (Password)</label>
                                     <input type="password" required placeholder="••••••••••••" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:border-[#fbbf24] transition-colors" />
                                 </div>
                                 <div class="flex flex-col gap-3 pt-3">
                                     <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-widest transition-all shadow-md">
-                                        Authorize & Enter Lounge
+                                        Validate Access Token
                                     </button>
                                 </div>
                             </form>
@@ -299,7 +304,7 @@
                 return;
             }
 
-            // --- STANDARD AUTHENTICATED SYSTEM LAYOUT MAPPING CONTAINER ---
+            // --- MAIN PLATFORM CONTAINER LAYOUT WRAPPER ---
             app.innerHTML = `
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-4 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
@@ -314,9 +319,9 @@
                                 ${unreadCount > 0 ? `<span class="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#16100d] animate-pulse">${unreadCount}</span>` : ''}
                             </button>
 
-                            <div class="absolute right-0 mt-3 w-80 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 z-[60] ${state.isNotificationDropdownOpen ? 'opacity-100 scale-100 animate-fadeIn' : 'opacity-0 scale-95 pointer-events-none'}"">
+                            <div class="absolute right-0 mt-3 w-80 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 z-[60] ${state.isNotificationDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
                                 <div class="p-3 bg-[#231915] border-b border-[#2d201a] flex justify-between items-center">
-                                    <h4 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Notification Hub Logs</h4>
+                                    <h4 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Platform Live Alerts</h4>
                                     ${unreadCount > 0 ? `<button onclick="clearAllNotifications()" class="text-[10px] text-[#fbbf24] hover:underline uppercase font-bold tracking-wider">Flush</button>` : ''}
                                 </div>
                                 <div class="max-h-64 overflow-y-auto divide-y divide-[#231915]">
@@ -356,11 +361,11 @@
                         </div>
                         <div class="space-y-3 mt-6">
                             <div class="p-4 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center">
-                                <span class="text-[11px] text-gray-400 block font-mono">Seat Handle:</span>
+                                <span class="text-[11px] text-gray-400 block font-mono">Seat Allocation Handle:</span>
                                 <span class="text-xs text-[#fbbf24] font-bold block mt-0.5">@${state.profile.username}</span>
                             </div>
                             <button onclick="handleSignOut()" class="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-lg transition-all border border-transparent hover:border-red-900/30">
-                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout (Exit App)
+                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Clear Token Session (Logout)
                             </button>
                         </div>
                     </aside>
@@ -370,7 +375,7 @@
 
                 ${state.showRewardModal ? `
                 <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-                    <div class="bg-[#16100d] border border-[#fbbf24] p-8 rounded-2xl max-w-sm w-full text-center space-y-5 shadow-2xl relative">
+                    <div class="bg-[#16100d] border border-[#fbbf24] p-8 rounded-2xl max-w-sm w-full text-center space-y-5 shadow-2xl">
                         <div class="flex justify-center">
                             <div class="w-20 h-20 bg-[#231915] border border-[#fbbf24]/50 rounded-full flex items-center justify-center text-[#fbbf24] coffee-bounce shadow-lg shadow-[#fbbf24]/10">
                                 <i data-lucide="cup-straw" class="w-10 h-10"></i>
@@ -380,7 +385,7 @@
                             <h3 class="text-xl font-bold tracking-wide text-[#fbbf24]">Thank you for supporting this writer! ☕</h3>
                             <p class="text-xs text-white font-serif italic text-amber-100/70">Here is a warm cup of coffee as appreciation.</p>
                         </div>
-                        <button onclick="state.showRewardModal=false; state.selectedBeanRating=0; render();" class="w-full py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-md">Return to Lounge Table</button>
+                        <button onclick="state.showRewardModal=false; state.selectedBeanRating=0; render();" class="w-full py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-md">Return to Table</button>
                     </div>
                 </div>` : ''}
 
@@ -397,9 +402,9 @@
 
             const target = document.getElementById('view-target');
 
-            // --- VIEW MODULE A: HOMEPAGE ESSAY FEED ---
+            // --- VIEW ENGINE A: PRIMARY MAIN LOUNGE CENTRAL FEED ---
             if (state.currentView === 'FEED') {
-                let dropdownMenuHtml = hashtagCategories.map(c => `
+                let dropdownMenuOptionsHtml = categories.map(c => `
                     <button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" 
                         class="w-full text-left px-4 py-3 text-xs font-mono tracking-wide transition-colors flex justify-between items-center ${state.activeFilter === c.id ? 'bg-[#2d201a] text-[#fbbf24]' : 'text-white hover:bg-[#231915]'}"">
                         <span>${c.tag} <span class="text-[11px] text-gray-400 ml-2">(${c.label})</span></span>
@@ -423,8 +428,8 @@
                             <p class="text-sm text-white font-light leading-relaxed line-clamp-3">${art.body.substring(0, 180)}...</p>
                         </div>
                         <div class="mt-6 pt-4 border-t border-[#231915] flex justify-between items-center text-xs text-[#fbbf24] font-semibold tracking-wide uppercase">
-                            <span class="group-hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Read Article</span>
-                            <span class="text-gray-400 flex items-center gap-1 normal-case font-normal"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> Comment Ledger</span>
+                            <span class="group-hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Pull Up Essay Text</span>
+                            <span class="text-gray-400 flex items-center gap-1 normal-case font-normal"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> Comments Feed</span>
                         </div>
                     </div>`).join('');
 
@@ -435,11 +440,11 @@
                                 <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; state.isNotificationDropdownOpen=false; render();" 
                                     class="px-4 py-2.5 rounded-lg text-xs font-bold bg-[#16100d] text-white border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2 transition-all">
                                     <i data-lucide="hash" class="w-3.5 h-3.5 text-[#fbbf24]"></i>
-                                    <span>Browse Categories: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
+                                    <span>All Categories Dropdown: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 text-[#fbbf24] transition-transform ${state.isCategoryDropdownOpen?'rotate-180':''}"></i>
                                 </button>
                                 <div class="absolute left-0 mt-2 w-64 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100 animate-fadeIn' : 'opacity-0 scale-95 pointer-events-none'}"">
-                                    ${dropdownMenuHtml}
+                                    ${dropdownMenuOptionsHtml}
                                 </div>
                             </div>
                         </div>
@@ -447,37 +452,37 @@
                     </div>`;
             }
 
-            // --- VIEW MODULE B: EDIT PROFILE MODULES ---
+            // --- VIEW ENGINE B: PROFILE WRITER PROFILE MUTATION MATRIX ---
             else if (state.currentView === 'PROFILE') {
                 target.innerHTML = `
                     <div class="max-w-xl mx-auto py-2 space-y-8 animate-fadeIn">
-                        <h2 class="text-2xl font-bold tracking-wide uppercase border-b border-[#2d201a] pb-3">Edit Profile Configurations</h2>
+                        <h2 class="text-2xl font-bold tracking-wide uppercase border-b border-[#2d201a] pb-3">Edit Profile Configuration</h2>
                         <form onsubmit="handleProfileSave(event)" class="space-y-5 bg-[#16100d] border border-[#2d201a] p-6 rounded-xl shadow-xl">
                             <div>
-                                <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Pen Pseudonym Designation</label>
+                                <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Pen Pseudonym Identity Name</label>
                                 <input type="text" id="edit-name" required value="${state.profile.name}" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#fbbf24] transition-colors font-medium" />
                             </div>
                             <div>
-                                <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">User Handle Identifier Target (@)</label>
+                                <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">User Handle Parameter Prefix (@)</label>
                                 <div class="relative flex items-center">
                                     <span class="absolute left-4 text-xs font-bold font-mono text-[#fbbf24]">@</span>
                                     <input type="text" id="edit-username" required value="${state.profile.username}" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg pl-9 pr-4 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-[#fbbf24] transition-colors" />
                                 </div>
                             </div>
                             <div>
-                                <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Author Biography Payload Text</label>
+                                <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Author Biography Narrative Text</label>
                                 <textarea id="edit-bio" rows="3" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#fbbf24] resize-none leading-relaxed font-light">${state.profile.bio}</textarea>
                             </div>
-                            <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-wider transition-all mt-1">Commit System Profile Registry</button>
+                            <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-wider transition-all mt-1">Commit System Profile Parameters</button>
                         </form>
                     </div>`;
             }
 
-            // --- VIEW MODULE C: WRITING INTERACTION ENVIRONMENT CANVAS ---
+            // --- VIEW ENGINE C: WRITING INSTRUMENTATION WORKSPACE ---
             else if (state.currentView === 'WRITE') {
                 let chatHistoryHtml = state.aiChatHistory.map(m => `
                     <div class="p-3 rounded-xl text-xs leading-relaxed ${m.sender === 'user' ? 'bg-[#2d201a] text-white border border-[#523b30] ml-5' : 'bg-[#0c0806] text-white border border-[#2d201a] mr-5'}">
-                        <b class="block text-[10px] uppercase tracking-widest mb-1 font-mono ${m.sender==='user'?'text-[#fbbf24]':'text-[#fbbf24]/70'}">${m.sender==='user'?'Your Parameter':'AI Barista Engine'}</b>
+                        <b class="block text-[10px] uppercase tracking-widest mb-1 font-mono ${m.sender==='user'?'text-[#fbbf24]':'text-[#fbbf24]/70'}">${m.sender==='user'?'Your Parameter Input':'AI Barista Logic Engine'}</b>
                         <span class="whitespace-pre-line">${m.text}</span>
                     </div>`).join('');
 
@@ -523,7 +528,7 @@
                 if(pane) pane.scrollTop = pane.scrollHeight;
             }
 
-            // --- VIEW MODULE D: WRITER NARRATIVE READER PAGE LAYOUT VIEW ---
+            // --- VIEW ENGINE D: WORKSPACE LONG-FORM ESSAY READER ENGINE ---
             else if (state.currentView === 'READER') {
                 const targetEssay = state.databaseArticles.find(a => a.id === state.selectedArticleId) || state.databaseArticles[0];
                 let beansHtml = '';
@@ -550,8 +555,8 @@
 
                             <div class="mt-10 p-5 bg-[#16100d] border border-[#2d201a] rounded-xl space-y-4 shadow-inner">
                                 <div class="space-y-1">
-                                    <h4 class="text-xs uppercase tracking-wider font-bold text-white">Interactive Appreciation Matrix Layer</h4>
-                                    <p class="text-[11px] text-gray-400">Assign an operational rating factor. 4-5 star designations dispatch virtual coffee tokens instantly to the writer profile database.</p>
+                                    <h4 class="text-xs uppercase tracking-wider font-bold text-white">Appreciation Evaluation Matrix</h4>
+                                    <p class="text-[11px] text-gray-400">Assign an operational rating scale point. 4-5 star designations dispatch virtual coffee tokens instantly to the writer profile logs.</p>
                                 </div>
                                 <div class="flex items-center gap-1">${beansHtml}</div>
                                 <button onclick="handleRatingSubmission();" class="mt-2 px-5 py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md flex items-center gap-2"><i data-lucide="award" class="w-3.5 h-3.5"></i> Submit Evaluation Metric</button>
@@ -559,9 +564,9 @@
                         </div>
 
                         <aside class="bg-[#16100d] border border-[#2d201a] rounded-xl p-5 space-y-4 shadow-xl">
-                            <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#fbbf24]"></i> Atmospheric Feeds</h3>
+                            <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#fbbf24]"></i> Ambient Channels</h3>
                             <div class="space-y-2">
-                                ${['Vinyl Dust Loops', 'Rain Deck Arrays'].map(track => `
+                                ${['Vinyl Dust Drips', 'Rain Deck Arrays'].map(track => `
                                     <div class="flex justify-between items-center p-3 bg-[#0c0806] border border-[#2d201a] rounded-xl shadow-md">
                                         <span class="text-xs font-medium text-white">${track}</span>
                                         <button class="p-1.5 bg-[#16100d] hover:bg-[#2d201a] rounded-md text-[#fbbf24] transition-colors border border-[#2d201a]"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
@@ -571,7 +576,7 @@
                     </div>`;
             }
 
-            // --- VIEW MODULE E: PROFILE CREATOR CREATIVE DASHBOARD HUB ---
+            // --- VIEW ENGINE E: ACCOUNT CREATOR HOUSING SEGMENT DASHBOARD ---
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let personalPostsGridHtml = personalArticles.map(p => `
@@ -620,8 +625,8 @@
 
                         <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-xl shadow-xl space-y-4">
                             <div class="flex justify-between items-center border-b border-[#2d201a] pb-3">
-                                <h3 class="text-md font-bold tracking-wider uppercase text-white flex items-center gap-2"><i data-lucide="folder-git" class="w-4 h-4 text-[#fbbf24]"></i> Published Articles Index Ledger</h3>
-                                <button onclick="navigateTo('WRITE')" class="px-3 py-1 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded flex items-center gap-1 uppercase tracking-wide"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Compose Post</button>
+                                <h3 class="text-md font-bold tracking-wider uppercase text-white flex items-center gap-2"><i data-lucide="folder-git" class="w-4 h-4 text-[#fbbf24]"></i> Custom Published Articles Ledger</h3>
+                                <button onclick="navigateTo('WRITE')" class="px-3 py-1 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded flex items-center gap-1 uppercase tracking-wide"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Fresh Drip</button>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                                 ${personalPostsGridHtml || '<div class="col-span-2 p-8 text-center text-xs text-gray-400 italic border border-dashed border-[#2d201a] rounded-xl">No published text narratives associated with this profile allocation code block.</div>'}
@@ -630,17 +635,17 @@
                     </div>`;
             }
 
-            // --- VIEW MODULE F: COMMUNITY BULLETIN FORUM LAYER ---
+            // --- VIEW ENGINE F: FORUM BULLETIN LAYOUT ROUTE ---
             else if (state.currentView === 'COMMUNITY') {
                 target.innerHTML = `
                     <div class="space-y-6 animate-fadeIn">
-                        <h2 class="text-2xl font-bold tracking-wide uppercase border-b border-[#2d201a] pb-3">Community Bulletin Matrix</h2>
+                        <h2 class="text-2xl font-bold tracking-wide uppercase border-b border-[#2d201a] pb-3">The Bulletin Board Community</h2>
                         <div class="bg-[#16100d] border border-[#2d201a] rounded-xl p-6 shadow-md space-y-4">
                             <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl flex justify-between items-start">
                                 <div class="space-y-1">
                                     <span class="text-xs font-mono font-bold text-[#fbbf24]">PINNED NOTICE: @cafe_admin</span>
-                                    <h4 class="text-md font-bold text-white font-serif">Welcome to Anteiku Hub V2 (Unblockable Architecture)</h4>
-                                    <p class="text-xs text-white/80 font-light max-w-2xl leading-relaxed">Please test the persistent localStorage login parameters by refreshing your active browser tab instance. All native alert windows are replaced with internal modal elements.</p>
+                                    <h4 class="text-md font-bold text-white font-serif">Welcome to the Anteiku Hub Platform Matrix</h4>
+                                    <p class="text-xs text-white/80 font-light max-w-2xl leading-relaxed">Please test the persistent localStorage login parameters by refreshing your active browsing instance. Five baseline essays have been successfully injected into the system feed to ensure proper database indexing functions.</p>
                                 </div>
                             </div>
                         </div>
