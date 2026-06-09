@@ -10,6 +10,8 @@
     
     <style>
         body { 
+            /* 2. SMOKY BACKGROUND GRADIENT */
+            background: radial-gradient(circle at 50% 40%, #16110f 0%, #0c0806 70%);
             background-color: #0c0806; 
             color: #f5f0eb; 
             font-family: 'Inter', sans-serif; 
@@ -34,17 +36,79 @@
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
         @keyframes bounceSlow {
-            0%, 100% { transform: translateY(0); }
+            0%, 100__ { transform: translateY(0); }
             50% { transform: translateY(-8px); }
         }
         .coffee-bounce {
             animation: bounceSlow 2s infinite ease-in-out;
         }
+
+        /* 1 & 3. THE STEAM EFFECT & MOVEMENT RULES */
+        @keyframes wavy-smoke-drift {
+            0% {
+                transform: translateY(100vh) translateX(0) scaleX(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.04;
+            }
+            40% {
+                transform: translateY(50vh) translateX(25px) scaleX(1.2);
+                opacity: 0.05;
+            }
+            70% {
+                transform: translateY(20vh) translateX(-20px) scaleX(0.9);
+                opacity: 0.02;
+            }
+            100% {
+                transform: translateY(-20vh) translateX(10px) scaleX(1.1);
+                opacity: 0;
+            }
+        }
+
+        .steam-line {
+            position: absolute;
+            bottom: 0;
+            fill: none;
+            stroke: #fbbf24; /* Muted yellow/amber steam to cast a warm glow */
+            stroke-width: 2;
+            stroke-linecap: round;
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        .steam-1 {
+            left: 25%;
+            animation: wavy-smoke-drift 14s infinite linear;
+        }
+        .steam-2 {
+            left: 55%;
+            animation: wavy-smoke-drift 18s infinite linear;
+            animation-delay: 4s;
+        }
+        .steam-3 {
+            left: 78%;
+            animation: wavy-smoke-drift 16s infinite linear;
+            animation-delay: 8s;
+        }
     </style>
 </head>
 <body class="min-h-screen relative overflow-x-hidden select-none">
 
-    <div id="app" class="min-h-screen flex flex-col"></div>
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <svg class="steam-line steam-1" width="60" height="200" viewBox="0 0 60 200">
+            <path d="M30,200 C45,150 15,100 30,50 C45,0 30,-50 30,-100" />
+        </svg>
+        <svg class="steam-line steam-2" width="60" height="200" viewBox="0 0 60 200">
+            <path d="M30,200 C15,160 45,120 30,80 C15,40 35,0 30,-40" />
+        </svg>
+        <svg class="steam-line steam-3" width="60" height="200" viewBox="0 0 60 200">
+            <path d="M30,200 C50,140 20,90 35,40 C50,-10 25,-40 30,-90" />
+        </svg>
+    </div>
+
+    <div id="app" class="min-h-screen flex flex-col relative z-10"></div>
 
     <script>
         // --- FIXED SAMPLE REPOSITORY INITIALIZATION ---
@@ -131,7 +195,7 @@
 
             return {
                 isAuthenticated: isAuth,
-                currentView: isAuth ? 'FEED' : 'LANDING', // STREAMLINED ARCHITECTURE: ONLY VALUABLE VIEWS ALLOWED
+                currentView: isAuth ? 'FEED' : 'LANDING',
                 profile: profile,
                 databaseArticles: articles,
                 notifications: notifications,
@@ -302,9 +366,7 @@
             // --- SIGN-IN MODAL WALL CHECK ---
             if (!state.isAuthenticated || state.currentView === 'LANDING') {
                 app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative bg-[#0c0806]">
-                        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#fbbf24]/5 blur-[130px] rounded-full pointer-events-none"></div>
-                        
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
                         <div class="max-w-md w-full space-y-6 z-10 animate-fadeIn bg-[#16100d] border border-[#3c2a22] p-8 rounded-2xl shadow-2xl">
                             <div class="text-center space-y-2">
                                 <div class="flex justify-center mb-1">
@@ -379,8 +441,8 @@
                     </div>
                 </header>
 
-                <div class="flex flex-1 flex-col md:flex-row">
-                    <aside class="w-full md:w-64 bg-[#16100d] border-r border-[#2d201a] p-6 flex flex-col justify-between shrink-0 shadow-2xl">
+                <div class="flex flex-1 flex-col md:flex-row relative z-10">
+                    <aside class="w-full md:w-64 bg-[#16100d]/90 backdrop-blur-sm border-b md:border-b-0 md:border-r border-[#2d201a] p-6 flex flex-col justify-between shrink-0 shadow-2xl">
                         <div class="space-y-2">
                             <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold mb-4 px-3">Café Navigation Index</p>
                             <nav class="space-y-1">
@@ -406,7 +468,7 @@
                         </div>
                     </aside>
 
-                    <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden" id="view-target"></main>
+                    <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden animate-fadeIn" id="view-target"></main>
                 </div>
 
                 ${state.showRewardModal ? `
@@ -438,7 +500,7 @@
 
             const target = document.getElementById('view-target');
 
-            // --- ROUTING MATRIX VIEW A: CENTRAL ESSAY FEED LOUNGE ---
+            // --- ROUTING MATRIX VIEW A: CENTRAL FEED LOUNGE ---
             if (state.currentView === 'FEED') {
                 let dropdownMenuOptionsHtml = categories.map(c => `
                     <button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" 
@@ -452,7 +514,7 @@
                     : state.databaseArticles.filter(a => a.category === state.activeFilter);
 
                 let feedCardsHtml = filtered.map(art => `
-                    <div onclick="state.selectedArticleId='${art.id}'; navigateTo('READER');" class="group bg-[#16100d] border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/40 transition-all duration-300 cursor-pointer flex flex-col justify-between shadow-md">
+                    <div onclick="state.selectedArticleId='${art.id}'; navigateTo('READER');" class="group bg-[#16100d]/90 backdrop-blur-sm border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/40 transition-all duration-300 cursor-pointer flex flex-col justify-between shadow-md">
                         <div>
                             <div class="flex items-center gap-3 mb-3">
                                 <span class="text-xs font-mono font-bold tracking-wider text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded">${art.category}</span>
@@ -476,7 +538,7 @@
                     </div>`).join('');
 
                 target.innerHTML = `
-                    <div class="space-y-6 animate-fadeIn">
+                    <div class="space-y-6">
                         <div class="border-b border-[#2d201a] pb-4 flex items-center gap-3 relative z-40">
                             <div class="relative">
                                 <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; state.isNotificationDropdownOpen=false; render();" 
@@ -497,7 +559,7 @@
             // --- ROUTING MATRIX VIEW B: EDIT PROFILE MODULE VIEW ---
             else if (state.currentView === 'PROFILE') {
                 target.innerHTML = `
-                    <div class="max-w-xl mx-auto py-2 space-y-8 animate-fadeIn">
+                    <div class="max-w-xl mx-auto py-2 space-y-8">
                         <h2 class="text-2xl font-bold tracking-wide uppercase border-b border-[#2d201a] pb-3 text-[#fbbf24]">Edit Profile Configuration</h2>
                         <form onsubmit="handleProfileSave(event)" class="space-y-5 bg-[#16100d] border border-[#2d201a] p-6 rounded-xl shadow-xl">
                             <div>
@@ -529,7 +591,7 @@
                     </div>`).join('');
 
                 target.innerHTML = `
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start animate-fadeIn">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         <div class="lg:col-span-2 space-y-5">
                             <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl space-y-4 shadow-md">
                                 <h3 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">Select Article Type</h3>
@@ -556,12 +618,17 @@
 
                         <aside class="bg-[#16100d] border border-[#2d201a] rounded-xl p-4 flex flex-col h-[560px] justify-between shadow-2xl">
                             <div class="space-y-3 flex flex-col h-full overflow-hidden">
-                                <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2 shrink-0"><i data-lucide="sparkles" class="w-4 h-4 text-[#fbbf24]"></i> AI Barista Prompt Engine</h3>
+                                <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2 shrink-0">
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-[#fbbf24]"></i> 
+                                    AI Barista Prompt Engine
+                                </h3>
                                 <div id="chat-scroll-pane" class="flex-1 overflow-y-auto space-y-3 pr-1 pb-1">${chatHistoryHtml}</div>
                             </div>
                             <div class="pt-3 border-t border-[#2d201a] flex gap-2 shrink-0">
                                 <input type="text" id="ai-chat-input" placeholder="e.g., give me a FIFA World Cup idea..." onkeydown="if(event.key==='Enter') handleSendAiPrompt();" class="flex-1 bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] placeholder:text-gray-500" />
-                                <button onclick="handleSendAiPrompt();" class="p-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg transition-colors shadow-md"><i data-lucide="send" class="w-4 h-4 text-[#0c0806]"></i></button>
+                                <button onclick="handleSendAiPrompt();" class="p-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg transition-colors shadow-md">
+                                    <i data-lucide="send" class="w-4 h-4 text-[#0c0806]"></i>
+                                </button>
                             </div>
                         </aside>
                     </div>`;
@@ -570,7 +637,7 @@
                 if(pane) pane.scrollTop = pane.scrollHeight;
             }
 
-            // --- ROUTING MATRIX VIEW D: ISOLATED TEXT READER PANEL ---
+            // --- ROUTING MATRIX VIEW D: NARRATIVE ARTICLE READER VIEW ---
             else if (state.currentView === 'READER') {
                 const targetEssay = state.databaseArticles.find(a => a.id === state.selectedArticleId) || state.databaseArticles[0];
                 let beansHtml = '';
@@ -582,8 +649,8 @@
                 }
 
                 target.innerHTML = `
-                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start animate-fadeIn">
-                        <div class="lg:col-span-3 space-y-6 bg-[#16100d]/40 border border-[#2d201a] p-6 md:p-8 rounded-2xl shadow-xl">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                        <div class="lg:col-span-3 space-y-6 bg-[#16100d]/60 backdrop-blur-sm border border-[#2d201a] p-6 md:p-8 rounded-2xl shadow-xl">
                             <div class="space-y-2">
                                 <span class="text-xs font-mono font-bold tracking-wider text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded inline-block">${targetEssay.category}</span>
                                 <h1 class="text-3xl md:text-4xl font-bold leading-tight text-[#fbbf24]">${targetEssay.title}</h1>
@@ -618,7 +685,7 @@
                     </div>`;
             }
 
-            // --- ROUTING MATRIX VIEW E: PROFILE ACCOUNT OVERVIEW AND CREATOR DASHBOARD ---
+            // --- ROUTING MATRIX VIEW E: PROFILE ACCOUNT CREATOR DASHBOARD ---
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let personalPostsGridHtml = personalArticles.map(p => `
@@ -636,7 +703,7 @@
                     </div>`).join('');
 
                 target.innerHTML = `
-                    <div class="space-y-8 animate-fadeIn">
+                    <div class="space-y-8">
                         <div class="border-b border-[#2d201a] pb-2 flex gap-4">
                             <button class="px-4 py-2 border-b-2 border-[#fbbf24] text-sm font-bold uppercase tracking-wider text-[#fbbf24]">My Account Dashboard</button>
                         </div>
