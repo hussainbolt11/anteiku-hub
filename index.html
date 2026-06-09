@@ -16,16 +16,16 @@
         }
         h1, h2, h3, h4, h5, h6, .amber-title { 
             font-family: 'Cinzel', serif; 
-            color: #fbbf24; /* High-Contrast Warm Amber Yellow */
+            color: #fbbf24; 
         }
         
-        /* Custom Smooth Espresso Scrollbar */
+        /* Custom Espresso Theme Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #16100d; }
         ::-webkit-scrollbar-thumb { background: #453026; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
         
-        /* Animation Classes */
+        /* Interface Animations */
         .animate-fadeIn {
             animation: fadeIn 0.2s ease-out forwards;
         }
@@ -47,40 +47,60 @@
     <div id="app"></div>
 
     <script>
-        // --- REACTIVE APPLICATION STATE ENGINE ---
-        let state = {
-            isAuthenticated: false,
-            currentView: 'LANDING', // LANDING | FEED | PROFILE | WRITE | READER | COMMUNITY | ACCOUNT
-            profile: {
+        // --- DATA DEHYDRATION & PERSISTENCE SECURITY LAYER ---
+        function initializeCoreEngine() {
+            const isAuth = localStorage.getItem('anteiku_authenticated') === 'true';
+            
+            const savedProfile = localStorage.getItem('anteiku_profile');
+            const profile = savedProfile ? JSON.parse(savedProfile) : {
                 name: 'Ken Kaneki',
                 username: 'books_and_brews',
                 bio: 'Lover of tragic short stories and slow drip pour-overs. Writing from the corner booth.'
-            },
-            activeFilter: '#All', // #All | #Gaming | #Sports | #Education | #News | #GeneralKnowledge | Trending
-            isCategoryDropdownOpen: false,
-            selectedBeanRating: 0,
-            activeAmbientTrack: null,
-            selectedArticleId: '1',
-            
-            // Coffee Reward Animation Modal State
-            showRewardModal: false,
-            
-            // Advanced Writer Dashboard Local State
-            writerSelectedCategory: 'Gaming',
-            writerTitle: '',
-            writerSubtitle: '',
-            writerBody: '',
-            
-            // Dynamic AI Barista Chat Architecture State
-            aiInputText: '',
-            aiChatHistory: [
-                { sender: 'bot', text: 'Welcome writer. Tell me what theme or topic is on your mind (e.g., "give me a FIFA World Cup idea" or "cyberpunk philosophy"), and I will formulate highly customized writing vectors and structured angles for you.' }
-            ]
-        };
+            };
 
-        // --- GLOBAL APPARATUS DICTIONARIES ---
+            const savedArticles = localStorage.getItem('anteiku_articles');
+            const defaultArticles = [
+                { id: '1', title: 'The Spatial Design of Virtual Worlds', subtitle: 'Analyzing pacing, solitude, and architectural layout rules in modern open-world ecosystems.', readTime: '9 min read', category: '#Gaming', author: 'Ken Kaneki', snippet: 'To step inside a true virtual space is to accept an alternative pace. We dissect how minimal environments craft intentional narrative depth, pushing back against competitive metrics to cultivate personal headspace.' },
+                { id: '2', title: 'The Analytical Mind on the Pitch', subtitle: 'Tactical philosophy and the deep reading of space and geometric athletic arrays.', readTime: '7 min read', category: '#Sports', author: 'Alex Thorne', snippet: 'Modern sports setups mirror complex structural algorithms. Beyond physical execution lies a deep chess match written across manicured turf, prioritizing temporal mastery over brute physical acceleration.' },
+                { id: '3', title: 'Sipping Ink at Midnight', subtitle: 'A reflection on classic literary forms, education, and slow acquisition models.', readTime: '5 min read', category: '#Education', author: 'Suzuya', snippet: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct internal friction—a step back away from speed reading modules and rapid-fire video updates into quiet, concentrated study nodes.' }
+            ];
+            const articles = savedArticles ? JSON.parse(savedArticles) : defaultArticles;
+            if(!savedArticles) localStorage.setItem('anteiku_articles', JSON.stringify(defaultArticles));
+
+            // Dynamic Notifications Array Initialization
+            const savedNotifications = localStorage.getItem('anteiku_notifications');
+            const defaultNotifications = [
+                { id: 1, type: 'rating', message: "User123 rated your article 'The Spatial Design of Virtual Worlds' 5 Coffee Beans! ☕", unread: true },
+                { id: 2, type: 'like', message: "User123 liked your article 'The Spatial Design of Virtual Worlds'.", unread: true },
+                { id: 3, type: 'follower', message: "User123 started following your profile.", unread: false }
+            ];
+            const notifications = savedNotifications ? JSON.parse(savedNotifications) : defaultNotifications;
+            if(!savedNotifications) localStorage.setItem('anteiku_notifications', JSON.stringify(defaultNotifications));
+
+            return {
+                isAuthenticated: isAuth,
+                currentView: isAuth ? 'FEED' : 'LANDING',
+                profile: profile,
+                databaseArticles: articles,
+                notifications: notifications,
+                activeFilter: '#All',
+                isCategoryDropdownOpen: false,
+                isNotificationDropdownOpen: false,
+                selectedBeanRating: 0,
+                selectedArticleId: '1',
+                showRewardModal: false,
+                writerSelectedCategory: 'Gaming',
+                aiChatHistory: [
+                    { sender: 'bot', text: 'Welcome writer. Provide a specific request or theme (e.g., "give me a FIFA World Cup idea"), and I will generate custom ideas, titles, and dynamic talking points for you.' }
+                ]
+            };
+        }
+
+        // --- GLOBAL APP STATE STATE ROOT ---
+        let state = initializeCoreEngine();
+
         const hashtags = [
-            { id: '#All', label: 'Show All Articles', tag: '#All' },
+            { id: '#All', label: 'All Categories', tag: '#All' },
             { id: '#Gaming', label: 'Gaming', tag: '#Gaming' },
             { id: '#Sports', label: 'Sports', tag: '#Sports' },
             { id: '#Education', label: 'Education', tag: '#Education' },
@@ -88,13 +108,7 @@
             { id: '#GeneralKnowledge', label: 'General Knowledge', tag: '#GeneralKnowledge' }
         ];
 
-        let databaseArticles = [
-            { id: '1', title: 'The Spatial Design of Virtual Worlds', subtitle: 'Analyzing pacing, solitude, and architectural layout rules in modern open-world ecosystems.', readTime: '9 min read', category: '#Gaming', author: 'Ken Kaneki', snippet: 'To step inside a true virtual space is to accept an alternative pace. We dissect how minimal environments craft intentional narrative depth, pushing back against competitive metrics to cultivate personal headspace.' },
-            { id: '2', title: 'The Analytical Mind on the Pitch', subtitle: 'Tactical philosophy and the deep reading of space and geometric athletic arrays.', readTime: '7 min read', category: '#Sports', author: 'Alex Thorne', snippet: 'Modern sports setups mirror complex structural algorithms. Beyond physical execution lies a deep chess match written across manicured turf, prioritizing temporal mastery over brute physical acceleration.' },
-            { id: '3', title: 'Sipping Ink at Midnight', subtitle: 'A reflection on classic literary forms, education, and slow acquisition models.', readTime: '5 min read', category: '#Education', author: 'Suzuya', snippet: 'Porcelain steam catches the soft study lamp light. Real learning requires a distinct internal friction—a step back away from speed reading modules and rapid-fire video updates into quiet, concentrated study nodes.' }
-        ];
-
-        // --- PLATFORM CORE CONTROLLER ROUTER ---
+        // --- CLIENT SIDE STATE APPLICATION ROUTER ---
         function navigateTo(view) {
             if (!state.isAuthenticated && view !== 'LANDING') {
                 state.currentView = 'LANDING';
@@ -102,26 +116,41 @@
                 state.currentView = view;
             }
             state.isCategoryDropdownOpen = false;
+            state.isNotificationDropdownOpen = false;
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- MOCK SERVICE HANDLERS ---
+        // --- HARD AUTHENTICATION HANDLERS ---
         function handleSignIn(e) {
             if (e) e.preventDefault();
             state.isAuthenticated = true;
+            localStorage.setItem('anteiku_authenticated', 'true');
             navigateTo('FEED');
         }
 
+        function handleSignOut() {
+            state.isAuthenticated = false;
+            localStorage.setItem('anteiku_authenticated', 'false');
+            navigateTo('LANDING');
+        }
+
+        // --- PROFILE CONTROL HANDLERS ---
         function handleProfileSave(e) {
             if (e) e.preventDefault();
             state.profile.name = document.getElementById('edit-name').value;
             state.profile.username = document.getElementById('edit-username').value.replace('@', '');
             state.profile.bio = document.getElementById('edit-bio').value;
-            alert('Profile alterations safely synchronized with local global app state!');
-            render(); // Rerender layout tree to force state interpolation updates across components
+            
+            localStorage.setItem('anteiku_profile', JSON.stringify(state.profile));
+            
+            // Trigger a Dynamic Follower Notification simulation upon updates
+            simulateIncomingNotification('follower', null);
+            alert('Profile configuration synchronized successfully!');
+            render(); 
         }
 
+        // --- CONTENT COMPOSITION ENGINE ---
         function handlePublishArticle(e) {
             if (e) e.preventDefault();
             const titleInput = document.getElementById('w-title').value.trim();
@@ -129,29 +158,31 @@
             const bodyInput = document.getElementById('w-body').value.trim();
             
             if (!titleInput || !bodyInput) {
-                alert('Please provide a Title and Body Composition Content.');
+                alert('Please supply both an operational Title and Essay Content block.');
                 return;
             }
 
             const newPost = {
-                id: String(databaseArticles.length + 1),
+                id: String(state.databaseArticles.length + 1),
                 title: titleInput,
-                subtitle: subtitleInput || 'An artisanal espresso-bar reflection.',
-                readTime: `${Math.max(1, Math.ceil(bodyInput.split(' ').length / 150))} min read`,
+                subtitle: subtitleInput || 'Fresh drip thoughts.',
+                readTime: `${Math.max(1, Math.ceil(bodyInput.split(' ').length / 160))} min read`,
                 category: `#${state.writerSelectedCategory}`,
                 author: state.profile.name,
                 snippet: bodyInput.substring(0, 180) + '...'
             };
 
-            databaseArticles.unshift(newPost);
-            alert(`Narrative successfully cataloged under #${state.writerSelectedCategory}!`);
+            state.databaseArticles.unshift(newPost);
+            localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
             
-            // Clear Dashboard Working Memory States
-            state.writerTitle = ''; state.writerSubtitle = ''; state.writerBody = '';
+            // Fire a Simulated Notification loop for interaction feedback
+            simulateIncomingNotification('like', titleInput);
+            
+            alert(`Narrative published into #${state.writerSelectedCategory} context arrays!`);
             navigateTo('FEED');
         }
 
-        // DYNAMIC NARRATIVE CONTEXT COMPILER FOR AI BARISTA ENGINE (FIXED)
+        // --- SMART DIALOGUE AI BARISTA PARSER ---
         function handleSendAiPrompt() {
             const inputElement = document.getElementById('ai-chat-input');
             if (!inputElement || !inputElement.value.trim()) return;
@@ -160,44 +191,76 @@
             state.aiChatHistory.push({ sender: 'user', text: rawPrompt });
             
             const normalized = rawPrompt.toLowerCase();
-            let intelligentReply = '';
+            let responseText = '';
 
-            // Context-Aware Intent Parsing Engine Logic Routing
             if (normalized.includes('fifa') || normalized.includes('world cup') || normalized.includes('sports')) {
-                intelligentReply = `☕ **Barista Curated Sports Narrative Schema:**\n\n* **Suggested Essay Title:** *The Grass Paradigm: Geopolitics and Silent Theaters of the World Cup.*\n* **Conceptual Anchor Point:** Focus heavily on the intense silence of a stadium *right before* a deciding penalty shoot-out. Compare it to a tactical chess arena.\n* **Structural Talking Points Blueprint:** \n  1. The Modern Coliseum effect.\n  2. Micro-geometry: Reading spatial spacing shifts under intense pressure indexes.\n  3. The lingering socio-cultural aftertaste when the lights deactivate.`;
+                responseText = `☕ **AI Barista Bespoke Sports Formula Strategy:**\n\n* **Bespoke Title:** *The Kinetic Grid: Micro-Geometry and Pressure Arrays at the World Cup.*\n* **Narrative Logic:** Analyze tactical spatial shifts. Zero in on the acute contrast of crowd silence against analytical field frameworks.\n* **Strategic Benchmarks:** \n  1. Mass emotional focus parameters.\n  2. Kinetic geometry: Reading passing channels.\n  3. Cultural residue when stadium architectures empty out.`;
             } else if (normalized.includes('gaming') || normalized.includes('game') || normalized.includes('play')) {
-                intelligentReply = `☕ **Barista Curated Virtual Architecture Schema:**\n\n* **Suggested Essay Title:** *Pixels and Solitude: Why We Seek Quiet Corners in Open Worlds.*\n* **Conceptual Anchor Point:** Discuss why modern players often stop exploring quests just to watch a digital sunset or rainfall render inside high-fidelity engines.\n* **Structural Talking Points Blueprint:**\n  1. Escape vectors from physical notification overload.\n  2. The sublime beauty of non-interactive game mechanics.\n  3. Crafting digital presence through slow pacing frameworks.`;
-            } else if (normalized.includes('philosophy') || normalized.includes('existential') || normalized.includes('life')) {
-                intelligentReply = `☕ **Barista Curated Philosophy Schema:**\n\n* **Suggested Essay Title:** *The Espresso Counter Meditation: On Loneliness vs. Solitude.*\n* **Conceptual Anchor Point:** Anchor the narrative on the specific difference between feeling isolated versus choosing a quiet booth to think deliberately.\n* **Structural Talking Points Blueprint:**\n  1. High-frequency digital noise as an architectural distraction.\n  2. The reclaiming of internal focus landscapes.\n  3. Coffeehouses as historical incubators for revolutionary long-form essays.`;
+                responseText = `☕ **AI Barista Bespoke Gaming Architecture Framework:**\n\n* **Bespoke Title:** *Virtual Quietude: Spatial Mechanics for Introspective Play.*\n* **Narrative Logic:** Challenge standard structural loop metrics. Pinpoint why players intentionally break gameplay flow to observe rendering landscapes.\n* **Strategic Benchmarks:**\n  1. Escapes from constant notification tracking loops.\n  2. Environmental isolation mechanics in game layout design.\n  3. Aesthetic pacing as a cognitive reset medium.`;
+            } else if (normalized.includes('education') || normalized.includes('school') || normalized.includes('learn')) {
+                responseText = `☕ **AI Barista Educational Logic Engine Blueprint:**\n\n* **Bespoke Title:** *Cognitive Retention Scaffolding: Slow Processing vs Fluid Data Feeds.*\n* **Narrative Logic:** Build an analytical case for functional retention methods against high-frequency summary ingestion indexes.\n* **Strategic Benchmarks:**\n  1. The internal friction requirement for memory integration.\n  2. Synthesizing original critiques instead of algorithmic text replication.\n  3. Modern classroom attention design frameworks.`;
             } else {
-                intelligentReply = `☕ **Barista Curated Composition Schema:**\n\n* **Suggested Essay Title:** *The Dynamics of "${rawPrompt}": A Targeted Exposition.*\n* **Conceptual Anchor Point:** Examine the underlying micro-structures and secondary cultural signals associated with this thematic focus element.\n* **Structural Talking Points Blueprint:**\n  1. Initial Perceptions: Stripping back basic surface assumptions.\n  2. Hidden Friction Layers: Investigating why this theme creates analytical tension.\n  3. Synthesized Resolution: Formulating a cohesive long-form outlook outline framework.`;
+                responseText = `☕ **AI Barista Standard Dynamic Writing Framework:**\n\n* **Bespoke Title:** *Deconstructing "${rawPrompt}": Contextual Realities and Signals.*\n* **Narrative Logic:** Unpack the structural mechanics and social undercurrents of this dynamic area.\n* **Strategic Benchmarks:**\n  1. Dissecting foundational biases.\n  2. Conceptual friction points within modern sub-cultural frameworks.\n  3. Synthesis methods for clear long-form resolution delivery.`;
             }
 
-            state.aiChatHistory.push({ sender: 'bot', text: intelligentReply });
+            state.aiChatHistory.push({ sender: 'bot', text: responseText });
             render();
             
-            // Flush window context scroll height constraints down to base row index
             const targetPane = document.getElementById('chat-scroll-pane');
             if(targetPane) targetPane.scrollTop = targetPane.scrollHeight;
         }
 
+        // --- RATING SUBMISSION & NOTIFICATION SYSTEM ---
         function submitCoffeeRating() {
             if (state.selectedBeanRating === 0) {
-                alert('Please select at least 1 Coffee Bean rating before submitting.');
+                alert('Select an operational evaluation index scale point.');
                 return;
+            }
+            const currentPost = state.databaseArticles.find(a => a.id === state.selectedArticleId) || state.databaseArticles[0];
+            
+            // Dynamic generation of mock interaction event data
+            if(state.selectedBeanRating >= 4) {
+                simulateIncomingNotification('rating', currentPost.title);
             }
             state.showRewardModal = true;
             render();
         }
 
-        // --- MAIN PRESENTATION RENDER ARCHITECTURE MATRIX ---
+        function simulateIncomingNotification(type, title) {
+            let message = '';
+            if (type === 'rating') {
+                message = `Reader_99 rated your article '${title}' ${state.selectedBeanRating} Coffee Beans! ☕`;
+            } else if (type === 'like') {
+                message = `Editor_Max liked your article '${title}'.`;
+            } else {
+                message = `Scholar_Beta started following your profile.`;
+            }
+
+            const newNotification = {
+                id: Date.now(),
+                type: type,
+                message: message,
+                unread: true
+            };
+
+            state.notifications.unshift(newNotification);
+            localStorage.setItem('anteiku_notifications', JSON.stringify(state.notifications));
+        }
+
+        function clearAllNotifications() {
+            state.notifications = state.notifications.map(n => ({ ...n, unread: false }));
+            localStorage.setItem('anteiku_notifications', JSON.stringify(state.notifications));
+            render();
+        }
+
+        // --- PLATFORM CORE INTERFACE COMPILER ---
         function render() {
             const app = document.getElementById('app');
 
-            // ACCESS WALL MATRIX VIEW (UNAUTHENTICATED)
+            // SECTION 1: SYSTEM SECURITY SHIELD PERIMETER WALL
             if (!state.isAuthenticated || state.currentView === 'LANDING') {
                 app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative overflow-hidden">
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative overflow-hidden bg-[#0c0806]">
                         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#fbbf24]/5 blur-[130px] rounded-full pointer-events-none"></div>
                         
                         <div class="max-w-md w-full space-y-6 z-10 animate-fadeIn bg-[#16100d] border border-[#3c2a22] p-8 rounded-2xl shadow-2xl">
@@ -209,18 +272,18 @@
                                 </div>
                                 <h1 class="text-4xl font-bold tracking-wide">Anteiku Hub</h1>
                                 <p class="text-md text-[#fbbf24] italic font-medium">Read deeply. Write freely.</p>
-                                <p class="text-xs text-[#d1c7bd] max-w-sm mx-auto font-light pt-1 leading-relaxed">
-                                    Welcome to the digital literary café. Establish your secure session instance to access our composition feeds and layout workspaces.
+                                <p class="text-xs text-[#9ca3af] max-w-sm mx-auto font-light pt-1 leading-relaxed">
+                                    Authenticate via localized session storage persistence memory gates.
                                 </p>
                             </div>
 
                             <form onsubmit="handleSignIn(event)" class="space-y-4 pt-2">
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Lounge Mail Address</label>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Cafe Address Account Token</label>
                                     <input type="email" required placeholder="writer@anteiku.com" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] placeholder:text-[#6b5246] focus:outline-none focus:border-[#fbbf24] transition-colors" />
                                 </div>
                                 <div>
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Security Password</label>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Access Password</label>
                                     <input type="password" required placeholder="••••••••••••" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] placeholder:text-[#6b5246] focus:outline-none focus:border-[#fbbf24] transition-colors" />
                                 </div>
                                 <div class="flex flex-col gap-3 pt-3">
@@ -228,7 +291,7 @@
                                         Step Inside (Sign In)
                                     </button>
                                     <button type="submit" class="w-full py-3 bg-[#231915] hover:bg-[#32241e] text-[#f5f0eb] border border-[#453026] rounded-lg font-semibold text-xs uppercase tracking-widest transition-all">
-                                        Pull Up a Chair (Sign Up)
+                                        Register Seat (Sign Up)
                                     </button>
                                 </div>
                             </form>
@@ -238,7 +301,9 @@
                 return;
             }
 
-            // AUTHENTICATED PLATFORM LAYOUT SHELL WRAPPER CONTAINER
+            // CORE PLATFORM ARCHITECTURE INTERFACE VIEW SHELL
+            const unreadCount = state.notifications.filter(n => n.unread).length;
+
             app.innerHTML = `
                 <div class="min-h-screen flex flex-col bg-[#0c0806]">
                     <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-4 flex justify-between items-center shadow-lg">
@@ -247,9 +312,34 @@
                             <span class="text-lg font-bold tracking-wider uppercase text-[#fbbf24]">Anteiku Hub</span>
                         </div>
                         
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-5 relative">
+                            <div class="relative">
+                                <button onclick="state.isNotificationDropdownOpen=!state.isNotificationDropdownOpen; state.isCategoryDropdownOpen=false; render();" class="relative p-2 text-[#fbbf24] hover:text-[#fff] transition-colors rounded-lg hover:bg-[#231915] focus:outline-none">
+                                    <i data-lucide="bell" class="w-5 h-5"></i>
+                                    ${unreadCount > 0 ? `
+                                        <span class="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#16100d] animate-pulse">
+                                            ${unreadCount}
+                                        </span>` : ''}
+                                </button>
+
+                                <div class="absolute right-0 mt-3 w-80 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 z-[60] ${state.isNotificationDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
+                                    <div class="p-3 bg-[#231915] border-b border-[#2d201a] flex justify-between items-center">
+                                        <h4 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Activity Logs</h4>
+                                        ${unreadCount > 0 ? `<button onclick="clearAllNotifications()" class="text-[10px] text-[#fbbf24] hover:underline uppercase font-bold tracking-wider">Mark Read</button>` : ''}
+                                    </div>
+                                    <div class="max-h-64 overflow-y-auto divide-y divide-[#231915]">
+                                        ${state.notifications.map(n => `
+                                            <div class="p-3.5 text-xs transition-colors flex items-start gap-2.5 ${n.unread ? 'bg-[#231915]/40 border-l-2 border-[#fbbf24]' : ''}">
+                                                <i data-lucide="${n.type === 'rating' ? 'coffee' : n.type === 'like' ? 'heart' : 'user-plus'}" class="w-4 h-4 mt-0.5 shrink-0 text-[#fbbf24]"></i>
+                                                <p class="text-[#f5f0eb] font-light leading-relaxed">${n.message}</p>
+                                            </div>`).join('')}
+                                        ${state.notifications.length === 0 ? `<div class="p-6 text-center text-xs text-[#6b5246] italic">No active ledger items logged.</div>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+
                             <span class="text-xs text-[#f5f0eb] hidden sm:inline-block font-medium bg-[#231915] px-3 py-1.5 rounded-md border border-[#3c2a22]">
-                                Active Bench: <span class="text-[#fbbf24] font-bold">${state.profile.name}</span>
+                                Booth Seat: <span class="text-[#fbbf24] font-bold">${state.profile.name}</span>
                             </span>
                             <button onclick="navigateTo('PROFILE')" class="text-xs tracking-wider uppercase font-bold text-[#fbbf24] hover:text-[#fff] border border-[#453026] px-4 py-2 rounded-md hover:bg-[#231915] transition-all">
                                 Edit Profile
@@ -260,7 +350,7 @@
                     <div class="flex flex-1 flex-col md:flex-row">
                         <aside class="w-full md:w-64 bg-[#16100d] border-r border-[#2d201a] p-6 flex flex-col justify-between shrink-0 shadow-2xl">
                             <div class="space-y-2">
-                                <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold mb-4 px-3">Lounge Index</p>
+                                <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold mb-4 px-3">Café Matrix Maps</p>
                                 <nav class="space-y-1">
                                     <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='FEED' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:text-[#fff] hover:bg-[#231915]'}"">
                                         <i data-lucide="compass" class="w-4 h-4"></i> The Main Lounge
@@ -276,9 +366,14 @@
                                     </button>
                                 </nav>
                             </div>
-                            <div class="p-4 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center mt-6">
-                                <span class="text-[11px] text-[#9ca3af] block font-mono">Current Booth Target:</span>
-                                <span class="text-xs text-[#fbbf24] font-bold block mt-0.5">@${state.profile.username}</span>
+                            <div class="space-y-3 mt-6">
+                                <div class="p-4 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center">
+                                    <span class="text-[11px] text-[#9ca3af] block font-mono">Profile Allocation:</span>
+                                    <span class="text-xs text-[#fbbf24] font-bold block mt-0.5">@${state.profile.username}</span>
+                                </div>
+                                <button onclick="handleSignOut()" class="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-lg transition-all border border-transparent hover:border-red-900/30">
+                                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Exit Lounge (Logout)
+                                </button>
                             </div>
                         </aside>
 
@@ -287,7 +382,7 @@
                 </div>
 
                 ${state.showRewardModal ? `
-                <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+                <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
                     <div class="bg-[#16100d] border border-[#fbbf24] p-8 rounded-2xl max-w-sm w-full text-center space-y-5 shadow-2xl relative">
                         <div class="flex justify-center">
                             <div class="w-20 h-20 bg-[#231915] border border-[#fbbf24]/50 rounded-full flex items-center justify-center text-[#fbbf24] coffee-bounce shadow-lg shadow-[#fbbf24]/10">
@@ -295,11 +390,11 @@
                             </div>
                         </div>
                         <div class="space-y-1">
-                            <h3 class="text-xl font-bold tracking-wide text-[#fbbf24]">Brew Sent to Writer!</h3>
-                            <p class="text-xs text-[#fff] font-serif italic text-amber-100/70">Thank you for supporting this writer! ☕</p>
+                            <h3 class="text-xl font-bold tracking-wide text-[#fbbf24]">Thank you for supporting this writer! ☕</h3>
+                            <p class="text-xs text-[#fff] font-serif italic text-amber-100/70">Here is a warm cup of coffee as appreciation.</p>
                         </div>
                         <p class="text-sm text-[#f5f0eb] leading-relaxed font-light">
-                            Here is a warm cup of coffee as appreciation for your sensory analytical rating valuation! Your feedback has modified the server parameters.
+                            Your interactive ledger evaluation score was successfully tracked inside the local indexing matrix stack.
                         </p>
                         <button onclick="state.showRewardModal=false; state.selectedBeanRating=0; render();" 
                             class="w-full py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg text-xs font-bold uppercase tracking-wider transition-colors shadow-md">
@@ -310,7 +405,7 @@
 
             const target = document.getElementById('view-target');
 
-            // VIEW 2: THE MAIN LOUNGE (FEED & HORIZONTAL HASHTAG DRAWER INTERPOLATOR)
+            // SECTION 2: HOMEPAGE ESSAY FEED MODULE WITH CATEGORICAL SEARCH DROPDOWN
             if (state.currentView === 'FEED') {
                 let dropdownMenuHtml = hashtags.map(h => `
                     <button onclick="state.activeFilter='${h.id}'; state.isCategoryDropdownOpen=false; render();" 
@@ -320,8 +415,8 @@
                     </button>`).join('');
 
                 let filtered = state.activeFilter === '#All' 
-                    ? databaseArticles 
-                    : state.activeFilter === 'Trending' ? [databaseArticles[0], databaseArticles[1]] : databaseArticles.filter(a => a.category === state.activeFilter);
+                    ? state.databaseArticles 
+                    : state.databaseArticles.filter(a => a.category === state.activeFilter);
 
                 let feedCards = filtered.map(art => `
                     <div onclick="state.selectedArticleId='${art.id}'; navigateTo('READER');" class="group bg-[#16100d] border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/40 transition-all duration-300 cursor-pointer flex flex-col justify-between shadow-md">
@@ -336,24 +431,19 @@
                             <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-3">${art.snippet}</p>
                         </div>
                         <div class="mt-6 pt-4 border-t border-[#231915] flex justify-between items-center text-xs text-[#fbbf24] font-semibold tracking-wide uppercase">
-                            <span class="group-hover:text-[#fff] flex items-center gap-1.5 transition-colors"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Read Narrative</span>
-                            <span class="text-[#9ca3af] flex items-center gap-1 normal-case font-normal"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> Lounge Commentary</span>
+                            <span class="group-hover:text-[#fff] flex items-center gap-1.5 transition-colors"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Read Full Narrative</span>
+                            <span class="text-[#9ca3af] flex items-center gap-1 normal-case font-normal"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> Commentary Vault</span>
                         </div>
                     </div>`).join('');
 
                 target.innerHTML = `
                     <div class="space-y-6 animate-fadeIn">
                         <div class="border-b border-[#2d201a] pb-4 flex items-center gap-3 relative z-40">
-                            <button onclick="state.activeFilter='Trending'; state.isCategoryDropdownOpen=false; render();" 
-                                class="px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${state.activeFilter==='Trending'?'bg-[#fbbf24] text-[#0c0806]':'bg-[#16100d] text-[#f5f0eb] border border-[#2d201a]'}"">
-                                Trending Section
-                            </button>
-                            
                             <div class="relative">
-                                <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" 
+                                <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; state.isNotificationDropdownOpen=false; render();" 
                                     class="px-4 py-2.5 rounded-lg text-xs font-bold bg-[#16100d] text-[#f5f0eb] border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2 transition-all">
                                     <i data-lucide="hash" class="w-3.5 h-3.5 text-[#fbbf24]"></i>
-                                    <span>All Categories: <span class="text-[#fbbf24] font-mono">${state.activeFilter === 'Trending' ? '#All' : state.activeFilter}</span></span>
+                                    <span>Browse Category Matrix: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 text-[#fbbf24] transition-transform ${state.isCategoryDropdownOpen?'rotate-180':''}"></i>
                                 </button>
                                 
@@ -364,12 +454,12 @@
                         </div>
 
                         <div class="grid grid-cols-1 gap-6 pt-1">
-                            ${feedCards || '<div class="p-12 text-center text-[#9ca3af] border border-dashed border-[#2d201a] rounded-xl font-serif italic text-sm">No written essays discovered matching this tag category selection yet.</div>'}
+                            ${feedCards || '<div class="p-12 text-center text-[#9ca3af] border border-dashed border-[#2d201a] rounded-xl font-serif italic text-sm">No written documents logged within this specific category node parameter index yet.</div>'}
                         </div>
                     </div>`;
             }
 
-            // VIEW 3: INSTAGRAM-STYLE PROFILE CONFIGURATOR PAGE VIEW (STATE INTEGRATION COMPLETED)
+            // SECTION 3: REHYDRATED PROFILE STRUCTURAL MANAGEMENT PAGE
             else if (state.currentView === 'PROFILE') {
                 target.innerHTML = `
                     <div class="max-w-xl mx-auto py-2 space-y-8 animate-fadeIn">
@@ -377,19 +467,15 @@
                             <div class="w-24 h-24 rounded-full bg-[#16100d] border-2 border-[#fbbf24] flex items-center justify-center text-3xl font-serif shadow-2xl text-[#fbbf24] tracking-wider">
                                 ${state.profile.name ? state.profile.name.substring(0,2).toUpperCase() : 'AN'}
                             </div>
-                            <label class="mt-3 text-xs text-[#fbbf24] hover:text-[#fff] hover:underline cursor-pointer tracking-wide font-semibold flex items-center gap-1">
-                                <i data-lucide="upload" class="w-3 h-3"></i> Upload New Portrait Canvas
-                                <input type="file" class="hidden" onchange="alert('Local file framework attached to pipeline.');"/>
-                            </label>
                         </div>
 
                         <form onsubmit="handleProfileSave(event)" class="space-y-5 bg-[#16100d] border border-[#2d201a] p-6 rounded-xl shadow-xl">
                             <div>
-                                <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Display Identifier Name</label>
+                                <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Lounge Name Identity Mapping</label>
                                 <input type="text" id="edit-name" required value="${state.profile.name}" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] transition-colors font-medium" />
                             </div>
                             <div>
-                                <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">Username Namespace Handles</label>
+                                <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block mb-1.5">User Handle Mapping Target</label>
                                 <div class="relative flex items-center">
                                     <span class="absolute left-4 text-xs font-bold font-mono text-[#fbbf24]">@</span>
                                     <input type="text" id="edit-username" required value="${state.profile.username}" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg pl-9 pr-4 py-2.5 text-sm text-[#f5f0eb] font-mono focus:outline-none focus:border-[#fbbf24] transition-colors" />
@@ -397,23 +483,23 @@
                             </div>
                             <div>
                                 <div class="flex justify-between items-center mb-1.5">
-                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block">Author Biography</label>
+                                    <label class="text-xs uppercase tracking-wider text-[#f5f0eb] font-bold block">Author Biography Payload</label>
                                     <span class="text-xs text-[#fbbf24] font-mono">${state.profile.bio.length} / 150</span>
                                 </div>
                                 <textarea id="edit-bio" maxlength="150" rows="3" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] resize-none leading-relaxed font-light">${state.profile.bio}</textarea>
                             </div>
                             <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-wider transition-all mt-1">
-                                Save Profile Changes
+                                Synchronize Profile Blueprint Settings
                             </button>
                         </form>
                     </div>`;
             }
 
-            // VIEW 4: ADVANCED WRITER'S DASHBOARD (WITH CATEGORY BINDING AND CONTEXTUAL CHAT ENGINE)
+            // SECTION 4: WRITER COMPOSITION ZONE (RADIO MATRIX + DYNAMIC CONTEXT AI CHAT)
             else if (state.currentView === 'WRITE') {
                 let chatHistoryHtml = state.aiChatHistory.map(m => `
                     <div class="p-3 rounded-xl text-xs leading-relaxed ${m.sender === 'user' ? 'bg-[#2d201a] text-[#f5f0eb] border border-[#523b30] ml-5' : 'bg-[#0c0806] text-[#f5f0eb] border border-[#2d201a] mr-5'}">
-                        <b class="block text-[10px] uppercase tracking-widest mb-1 font-mono ${m.sender==='user'?'text-[#fbbf24]':'text-[#fddcb5]'}">${m.sender==='user'?'Your Query':'Barista Machine'}</b>
+                        <b class="block text-[10px] uppercase tracking-widest mb-1 font-mono ${m.sender==='user'?'text-[#fbbf24]':'text-[#fddcb5]'}">${m.sender==='user'?'Your Parameter':'Barista Engine'}</b>
                         <span class="whitespace-pre-line">${m.text}</span>
                     </div>`).join('');
 
@@ -421,7 +507,7 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start animate-fadeIn">
                         <div class="lg:col-span-2 space-y-5">
                             <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl space-y-4 shadow-md">
-                                <h3 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">1. Select Article Category Type</h3>
+                                <h3 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">Select Article Type</h3>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     ${['Gaming', 'Sports', 'Education', 'News', 'GeneralKnowledge'].map(cat => `
                                         <label class="flex items-center gap-2.5 p-2.5 bg-[#0c0806] border rounded-lg cursor-pointer transition-colors ${state.writerSelectedCategory===cat?'border-[#fbbf24] bg-[#231915]':'border-[#3c2a22]'}"">
@@ -432,10 +518,14 @@
                             </div>
 
                             <div class="space-y-4 pt-1">
-                                <input type="text" id="w-title" placeholder="Title your long-form composition narrative..." class="w-full bg-transparent border-b border-[#2d201a] pb-3 text-3xl font-bold font-serif text-[#fbbf24] focus:outline-none focus:border-[#fbbf24] placeholder:text-[#2d201a]" />
-                                <input type="text" id="w-subtitle" placeholder="Add an elegant editorial subtitle summary..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-sm font-serif italic text-[#fbbf24]/70 focus:outline-none focus:border-[#2d201a] placeholder:text-[#231814]" />
+                                <input type="text" id="w-title" placeholder="Title your long-form composition narrative..." 
+                                    class="w-full bg-transparent border-b border-[#2d201a] pb-3 text-3xl font-bold font-serif text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] placeholder:text-[#c4a46e]" />
                                 
-                                <textarea id="w-body" rows="10" placeholder="Begin weaving your analytical thoughts into paragraphs..." class="w-full bg-[#16100d] border border-[#2d201a] rounded-xl p-5 text-sm text-[#f5f0eb] leading-relaxed focus:outline-none focus:border-[#fbbf24] resize-none placeholder:text-[#3c2a22]"></textarea>
+                                <input type="text" id="w-subtitle" placeholder="Add an elegant editorial subtitle summary..." 
+                                    class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-sm font-serif italic text-[#f5f0eb]/80 focus:outline-none focus:border-[#2d201a] placeholder:text-[#a3895c]" />
+                                
+                                <textarea id="w-body" rows="10" placeholder="Begin weaving your analytical thoughts into paragraphs..." 
+                                    class="w-full bg-[#16100d] border border-[#2d201a] rounded-xl p-5 text-sm text-[#f5f0eb] leading-relaxed focus:outline-none focus:border-[#fbbf24] resize-none placeholder:text-[#a3895c]"></textarea>
                             </div>
 
                             <div class="flex justify-end gap-3">
@@ -449,7 +539,6 @@
                                 <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2 shrink-0">
                                     <i data-lucide="sparkles" class="w-4 h-4 text-[#fbbf24]"></i> AI Barista Prompt Engine
                                 </h3>
-                                
                                 <div id="chat-scroll-pane" class="flex-1 overflow-y-auto space-y-3 pr-1 pb-1">
                                     ${chatHistoryHtml}
                                 </div>
@@ -458,7 +547,7 @@
                             <div class="pt-3 border-t border-[#2d201a] flex gap-2 shrink-0">
                                 <input type="text" id="ai-chat-input" placeholder="e.g., give me a FIFA World Cup idea..." 
                                     onkeydown="if(event.key==='Enter') handleSendAiPrompt();"
-                                    class="flex-1 bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] placeholder:text-[#6b5246]" />
+                                    class="flex-1 bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] placeholder:text-[#a3895c]" />
                                 <button onclick="handleSendAiPrompt();" class="p-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg transition-colors shadow-md">
                                     <i data-lucide="send" class="w-4 h-4"></i>
                                 </button>
@@ -466,14 +555,13 @@
                         </aside>
                     </div>`;
                 
-                // Track baseline scroll window adjustments
                 const pane = document.getElementById('chat-scroll-pane');
                 if(pane) pane.scrollTop = pane.scrollHeight;
             }
 
-            // VIEW 5: CORE READER COMPONENT WORKSPACE (WITH NEW REWARDS ENGINE POPUP COFFEE SYSTEM)
+            // SECTION 5: INTERACTIVE DEEP READ SCREEN LAYER WITH INTERACTIVE SCORE MATRIX
             else if (state.currentView === 'READER') {
-                const targetEssay = databaseArticles.find(a => a.id === state.selectedArticleId) || databaseArticles[0];
+                const targetEssay = state.databaseArticles.find(a => a.id === state.selectedArticleId) || state.databaseArticles[0];
                 
                 let beansHtml = '';
                 for (let i = 1; i <= 5; i++) {
@@ -488,37 +576,37 @@
                         <div class="lg:col-span-3 space-y-6 bg-[#16100d]/40 border border-[#2d201a] p-6 md:p-8 rounded-2xl shadow-xl">
                             <div class="space-y-2">
                                 <span class="text-xs font-mono font-bold tracking-wider text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded inline-block">${targetEssay.category}</span>
-                                <h1 class="text-3xl md:text-4xl font-bold leading-tight">${targetEssay.title}</h1>
-                                <p class="font-serif italic text-md text-[#fbbf24]/80">${targetEssay.subtitle}</p>
-                                <p class="text-xs text-[#9ca3af] pt-1">Cataloged author: <b class="text-[#f5f0eb] font-semibold">${targetEssay.author}</b></p>
+                                <h1 class="text-3xl md:text-4xl font-bold leading-tight text-[#fbbf24]">${targetEssay.title}</h1>
+                                <p class="font-serif italic text-md text-[#f5f0eb]/80">${targetEssay.subtitle}</p>
+                                <p class="text-xs text-[#9ca3af] pt-1">Cataloged Author: <b class="text-[#f5f0eb] font-semibold">${targetEssay.author}</b></p>
                             </div>
                             <hr class="border-[#2d201a]" />
                             <div class="text-base text-[#f5f0eb] font-light space-y-5 leading-relaxed">
                                 <p>${targetEssay.snippet}</p>
-                                <p>To experience true literacy is to accept isolation from contemporary metrics. High-velocity streams encourage rapid immediate responses over critical parsing. By isolating deep-dive long-form modules inside custom dark themes, we foster an intentional connection between author intents and reading environments. Every composition stands as an independent conceptual framework block.</p>
+                                <p>To experience true literary value is to pull away from immediate modern metrics. High-velocity systems encourage rapid short-form actions over deep qualitative reading loops. By choosing clean, targeted dark spaces, we cultivate a workspace connection matching author intents with direct aesthetic tracking parameters.</p>
                             </div>
 
                             <div class="mt-10 p-5 bg-[#16100d] border border-[#2d201a] rounded-xl space-y-4 shadow-inner">
                                 <div class="space-y-1">
-                                    <h4 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">Evaluate this Composition Brew</h4>
-                                    <p class="text-[11px] text-[#9ca3af]">Assign a rating evaluation metric to unlock coffee token awards for this workspace node.</p>
+                                    <h4 class="text-xs uppercase tracking-wider font-bold text-[#f5f0eb]">Evaluate this Narrative Drip</h4>
+                                    <p class="text-[11px] text-[#9ca3af]">Assign an appreciation rating value to dispatch coffee gift indicators to this author booth instance.</p>
                                 </div>
                                 <div class="flex items-center gap-1">${beansHtml}</div>
                                 <button onclick="submitCoffeeRating();" class="mt-2 px-5 py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md flex items-center gap-2">
-                                    <i data-lucide="award" class="w-3.5 h-3.5"></i> Submit Rating & Gift Coffee
+                                    <i data-lucide="award" class="w-3.5 h-3.5"></i> Submit Evaluation & Gift Brew
                                 </button>
                             </div>
                         </div>
 
                         <aside class="bg-[#16100d] border border-[#2d201a] rounded-xl p-5 space-y-4 shadow-xl">
-                            <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#fbbf24]"></i> Side Order</h3>
-                            <p class="text-xs text-[#9ca3af] leading-relaxed">Layer atmospheric sound parameters to isolate focus attention bandwidth.</p>
+                            <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#fbbf24]"></i> Side Order Ambient</h3>
+                            <p class="text-xs text-[#9ca3af] leading-relaxed">Isolate focus vectors through synthetic ambient field channels.</p>
                             <div class="space-y-2 pt-1">
-                                ${['Café Rain Deck', 'Soft Vinyl Lounge'].map(track => `
+                                ${['Café Rain Modules', 'Soft Vinyl Track'].map(track => `
                                     <div class="flex justify-between items-center p-3 bg-[#0c0806] border border-[#2d201a] rounded-xl shadow-md">
-                                        <span class="text-xs font-medium ${state.activeAmbientTrack===track?'text-[#fbbf24]':'text-[#f5f0eb]'}"">${track}</span>
-                                        <button onclick="state.activeAmbientTrack=state.activeAmbientTrack==='${track}'?null:'${track}'; render();" class="p-1.5 bg-[#16100d] hover:bg-[#2d201a] rounded-md text-[#fbbf24] transition-colors border border-[#2d201a]">
-                                            <i data-lucide="${state.activeAmbientTrack==='${track}'?'pause':'play'}" class="w-3.5 h-3.5"></i>
+                                        <span class="text-xs font-medium text-[#f5f0eb]">${track}</span>
+                                        <button class="p-1.5 bg-[#16100d] hover:bg-[#2d201a] rounded-md text-[#fbbf24] transition-colors border border-[#2d201a]">
+                                            <i data-lucide="play" class="w-3.5 h-3.5"></i>
                                         </button>
                                     </div>`).join('')}
                             </div>
@@ -526,18 +614,18 @@
                     </div>`;
             }
 
-            // BLANK FALLBACK BOILERPLATES (COMMUNITY & ACCOUNT OPTIONS ROUTES)
+            // SECTION 6: STANDBY UNDERDEVELOPED PAGES PLACEHOLDER MATRIX
             else {
                 target.innerHTML = `
                     <div class="p-12 text-center text-[#9ca3af] border border-dashed border-[#2d201a] rounded-xl font-serif italic text-sm bg-[#16100d] animate-fadeIn">
-                        This specific workspace sub-node component channel (<span class="text-[#fbbf24] font-mono font-bold">${state.currentView}</span>) is undergoing optimization cycles.
+                        This specific view block component (<span class="text-[#fbbf24] font-mono font-bold">${state.currentView}</span>) is undergoing routine code maintenance updates.
                     </div>`;
             }
 
             lucide.createIcons();
         }
 
-        // --- APPARATUS SYSTEM SEED EXECUTION ---
+        // --- PLATFORM ENGINE INSTANTIATION EXECUTION SEED ---
         render();
     </script>
 </body>
