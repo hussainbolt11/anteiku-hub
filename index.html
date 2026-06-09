@@ -47,7 +47,7 @@
     <div id="app" class="min-h-screen flex flex-col"></div>
 
     <script>
-        // --- 1. FIXED THE EMPTY LOUNGE: HARDCODED REPOSITORY INITIALIZATION ---
+        // --- FIXED SAMPLE REPOSITORY INITIALIZATION ---
         const hardcodedSampleArticles = [
             { 
                 id: 'seed-gaming', 
@@ -108,7 +108,6 @@
                 followers: 142
             };
 
-            // Force load the hardcoded seed articles if local memory is empty
             const savedArticles = localStorage.getItem('anteiku_articles');
             let articles = hardcodedSampleArticles;
             if (savedArticles) {
@@ -132,7 +131,7 @@
 
             return {
                 isAuthenticated: isAuth,
-                currentView: isAuth ? 'FEED' : 'LANDING',
+                currentView: isAuth ? 'FEED' : 'LANDING', // STREAMLINED ARCHITECTURE: ONLY VALUABLE VIEWS ALLOWED
                 profile: profile,
                 databaseArticles: articles,
                 notifications: notifications,
@@ -295,12 +294,12 @@
             render();
         }
 
-        // --- PLATFORM VIEW COMPILER ENGINE (3. FORCED HIGH-CONTRAST LOCKED) ---
+        // --- PLATFORM VIEW COMPILER ENGINE ---
         function render() {
             const app = document.getElementById('app');
             const unreadCount = state.notifications.filter(n => n.unread).length;
 
-            // --- MANDATORY LANDING SCREEN WALL ---
+            // --- SIGN-IN MODAL WALL CHECK ---
             if (!state.isAuthenticated || state.currentView === 'LANDING') {
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative bg-[#0c0806]">
@@ -341,7 +340,7 @@
                 return;
             }
 
-            // --- PLATFORM APPARATUS LAYOUT NODE WRAPPER ---
+            // --- PLATFORM BASE STRUCTURAL HOUSING ---
             app.innerHTML = `
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-4 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
@@ -391,9 +390,6 @@
                                 <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}"">
                                     <i data-lucide="pen-tool" class="w-4 h-4 text-[#fbbf24]"></i> Write Article
                                 </button>
-                                <button onclick="navigateTo('COMMUNITY')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='COMMUNITY' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}"">
-                                    <i data-lucide="users" class="w-4 h-4 text-[#fbbf24]"></i> The Community
-                                </button>
                                 <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-[#f5f0eb] hover:bg-[#231915]'}"">
                                     <i data-lucide="shield-check" class="w-4 h-4 text-[#fbbf24]"></i> Account Management
                                 </button>
@@ -442,7 +438,7 @@
 
             const target = document.getElementById('view-target');
 
-            // --- VIEW ENGINE A: PRIMARY MAIN LOUNGE CENTRAL FEED (.MAP ENGINE FIXED) ---
+            // --- ROUTING MATRIX VIEW A: CENTRAL ESSAY FEED LOUNGE ---
             if (state.currentView === 'FEED') {
                 let dropdownMenuOptionsHtml = categories.map(c => `
                     <button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" 
@@ -455,7 +451,6 @@
                     ? state.databaseArticles 
                     : state.databaseArticles.filter(a => a.category === state.activeFilter);
 
-                // 1. DYNAMIC COMPONENT TEXT MAPPING RENDERING PIPELINE
                 let feedCardsHtml = filtered.map(art => `
                     <div onclick="state.selectedArticleId='${art.id}'; navigateTo('READER');" class="group bg-[#16100d] border border-[#2d201a] p-6 rounded-xl hover:border-[#fbbf24]/40 transition-all duration-300 cursor-pointer flex flex-col justify-between shadow-md">
                         <div>
@@ -499,7 +494,7 @@
                     </div>`;
             }
 
-            // --- VIEW ENGINE B: PROFILE WRITER EDIT PANELS ---
+            // --- ROUTING MATRIX VIEW B: EDIT PROFILE MODULE VIEW ---
             else if (state.currentView === 'PROFILE') {
                 target.innerHTML = `
                     <div class="max-w-xl mx-auto py-2 space-y-8 animate-fadeIn">
@@ -525,7 +520,7 @@
                     </div>`;
             }
 
-            // --- VIEW ENGINE C: WRITING ENGINE WRITER WORKSPACE ---
+            // --- ROUTING MATRIX VIEW C: WRITER WORKSPACE NARRATIVE ENGINE ---
             else if (state.currentView === 'WRITE') {
                 let chatHistoryHtml = state.aiChatHistory.map(m => `
                     <div class="p-3 rounded-xl text-xs leading-relaxed ${m.sender === 'user' ? 'bg-[#2d201a] text-[#f5f0eb] border border-[#523b30] ml-5' : 'bg-[#0c0806] text-[#f5f0eb] border border-[#2d201a] mr-5'}">
@@ -561,17 +556,12 @@
 
                         <aside class="bg-[#16100d] border border-[#2d201a] rounded-xl p-4 flex flex-col h-[560px] justify-between shadow-2xl">
                             <div class="space-y-3 flex flex-col h-full overflow-hidden">
-                                <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2 shrink-0">
-                                    <i data-lucide="sparkles" class="w-4 h-4 text-[#fbbf24]"></i> 
-                                    AI Barista Prompt Engine
-                                </h3>
+                                <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2 shrink-0"><i data-lucide="sparkles" class="w-4 h-4 text-[#fbbf24]"></i> AI Barista Prompt Engine</h3>
                                 <div id="chat-scroll-pane" class="flex-1 overflow-y-auto space-y-3 pr-1 pb-1">${chatHistoryHtml}</div>
                             </div>
                             <div class="pt-3 border-t border-[#2d201a] flex gap-2 shrink-0">
                                 <input type="text" id="ai-chat-input" placeholder="e.g., give me a FIFA World Cup idea..." onkeydown="if(event.key==='Enter') handleSendAiPrompt();" class="flex-1 bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2.5 text-xs text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24] placeholder:text-gray-500" />
-                                <button onclick="handleSendAiPrompt();" class="p-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg transition-colors shadow-md">
-                                    <i data-lucide="send" class="w-4 h-4 text-[#0c0806]"></i>
-                                </button>
+                                <button onclick="handleSendAiPrompt();" class="p-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg transition-colors shadow-md"><i data-lucide="send" class="w-4 h-4 text-[#0c0806]"></i></button>
                             </div>
                         </aside>
                     </div>`;
@@ -580,7 +570,7 @@
                 if(pane) pane.scrollTop = pane.scrollHeight;
             }
 
-            // --- VIEW ENGINE D: WORKSPACE LONG-FORM ESSAY READER ENGINE ---
+            // --- ROUTING MATRIX VIEW D: ISOLATED TEXT READER PANEL ---
             else if (state.currentView === 'READER') {
                 const targetEssay = state.databaseArticles.find(a => a.id === state.selectedArticleId) || state.databaseArticles[0];
                 let beansHtml = '';
@@ -611,32 +601,24 @@
                                     <p class="text-[11px] text-gray-300">Assign an operational rating scale point. 4-5 star designations dispatch virtual coffee tokens instantly to the writer profile logs.</p>
                                 </div>
                                 <div class="flex items-center gap-1">${beansHtml}</div>
-                                <button onclick="handleRatingSubmission();" class="mt-2 px-5 py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md flex items-center gap-2">
-                                    <i data-lucide="award" class="w-3.5 h-3.5 text-[#0c0806]"></i> 
-                                    Submit Evaluation Metric
-                                </button>
+                                <button onclick="handleRatingSubmission();" class="mt-2 px-5 py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md flex items-center gap-2"><i data-lucide="award" class="w-3.5 h-3.5 text-[#0c0806]"></i> Submit Evaluation Metric</button>
                             </div>
                         </div>
 
                         <aside class="bg-[#16100d] border border-[#2d201a] rounded-xl p-5 space-y-4 shadow-xl">
-                            <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2">
-                                <i data-lucide="music" class="w-4 h-4 text-[#fbbf24]"></i> 
-                                Ambient Channels
-                            </h3>
+                            <h3 class="text-sm font-bold text-[#fbbf24] flex items-center gap-2 border-b border-[#2d201a] pb-2"><i data-lucide="music" class="w-4 h-4 text-[#fbbf24]"></i> Ambient Channels</h3>
                             <div class="space-y-2">
                                 ${['Vinyl Dust Drips', 'Rain Deck Arrays'].map(track => `
                                     <div class="flex justify-between items-center p-3 bg-[#0c0806] border border-[#2d201a] rounded-xl shadow-md">
                                         <span class="text-xs font-medium text-[#f5f0eb]">${track}</span>
-                                        <button class="p-1.5 bg-[#16100d] hover:bg-[#2d201a] rounded-md text-[#fbbf24] transition-colors border border-[#2d201a]">
-                                            <i data-lucide="play" class="w-3.5 h-3.5 text-[#fbbf24]"></i>
-                                        </button>
+                                        <button class="p-1.5 bg-[#16100d] hover:bg-[#2d201a] rounded-md text-[#fbbf24] transition-colors border border-[#2d201a]"><i data-lucide="play" class="w-3.5 h-3.5 text-[#fbbf24]"></i></button>
                                     </div>`).join('')}
                             </div>
                         </aside>
                     </div>`;
             }
 
-            // --- VIEW ENGINE E: ACCOUNT CREATOR DATA COUNTERS TRANSITION MATRIX ---
+            // --- ROUTING MATRIX VIEW E: PROFILE ACCOUNT OVERVIEW AND CREATOR DASHBOARD ---
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let personalPostsGridHtml = personalArticles.map(p => `
@@ -649,9 +631,7 @@
                         <p class="text-xs text-[#f5f0eb]/70 font-serif italic">${p.subtitle}</p>
                         <p class="text-xs text-[#f5f0eb] line-clamp-2 pt-1 font-light leading-relaxed">${p.body}</p>
                         <div class="pt-2 flex gap-3">
-                            <button onclick="state.selectedArticleId='${p.id}'; navigateTo('READER');" class="text-[11px] uppercase tracking-wider font-bold text-[#fbbf24] hover:underline flex items-center gap-1">
-                                <i data-lucide="eye" class="w-3 h-3 text-[#fbbf24]"></i> Inspect Document
-                            </button>
+                            <button onclick="state.selectedArticleId='${p.id}'; navigateTo('READER');" class="text-[11px] uppercase tracking-wider font-bold text-[#fbbf24] hover:underline flex items-center gap-1"><i data-lucide="eye" class="w-3 h-3 text-[#fbbf24]"></i> Inspect Document</button>
                         </div>
                     </div>`).join('');
 
@@ -663,27 +643,21 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                             <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl shadow-md flex items-center gap-4">
-                                <div class="p-3 bg-[#231915] rounded-lg text-[#fbbf24] border border-[#3c2a22]">
-                                    <i data-lucide="users" class="w-6 h-6 text-[#fbbf24]"></i>
-                                </div>
+                                <div class="p-3 bg-[#231915] rounded-lg text-[#fbbf24] border border-[#3c2a22]"><i data-lucide="users" class="w-6 h-6 text-[#fbbf24]"></i></div>
                                 <div>
                                     <span class="text-xs text-gray-400 block font-mono">Total Followers Count</span>
                                     <b class="text-2xl font-bold text-white tracking-wide">${state.profile.followers} Readers</b>
                                 </div>
                             </div>
                             <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl shadow-md flex items-center gap-4">
-                                <div class="p-3 bg-[#231915] rounded-lg text-[#fbbf24] border border-[#3c2a22]">
-                                    <i data-lucide="layers" class="w-6 h-6 text-[#fbbf24]"></i>
-                                </div>
+                                <div class="p-3 bg-[#231915] rounded-lg text-[#fbbf24] border border-[#3c2a22]"><i data-lucide="layers" class="w-6 h-6 text-[#fbbf24]"></i></div>
                                 <div>
                                     <span class="text-xs text-gray-400 block font-mono">Published Ledger Items</span>
                                     <b class="text-2xl font-bold text-white tracking-wide">${personalArticles.length} Posts</b>
                                 </div>
                             </div>
                             <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl shadow-md flex items-center gap-4">
-                                <div class="p-3 bg-[#231915] rounded-lg text-[#fbbf24] border border-[#3c2a22]">
-                                    <i data-lucide="award" class="w-6 h-6 text-[#fbbf24]"></i>
-                                </div>
+                                <div class="p-3 bg-[#231915] rounded-lg text-[#fbbf24] border border-[#3c2a22]"><i data-lucide="award" class="w-6 h-6 text-[#fbbf24]"></i></div>
                                 <div>
                                     <span class="text-xs text-gray-400 block font-mono">Syndication Status</span>
                                     <b class="text-sm uppercase tracking-wider font-bold text-[#fbbf24] block mt-1">Verified Café Resident</b>
@@ -693,10 +667,7 @@
 
                         <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-xl shadow-xl space-y-4">
                             <div class="flex justify-between items-center border-b border-[#2d201a] pb-3">
-                                <h3 class="text-md font-bold tracking-wider uppercase text-[#fbbf24] flex items-center gap-2">
-                                    <i data-lucide="folder-git" class="w-4 h-4 text-[#fbbf24]"></i> 
-                                    Custom Published Articles Ledger
-                                </h3>
+                                <h3 class="text-md font-bold tracking-wider uppercase text-[#fbbf24] flex items-center gap-2"><i data-lucide="folder-git" class="w-4 h-4 text-[#fbbf24]"></i> Custom Published Articles Ledger</h3>
                                 <button onclick="navigateTo('WRITE')" class="px-3 py-1 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded flex items-center gap-1 uppercase tracking-wide"><i data-lucide="plus" class="w-3.5 h-3.5 text-[#0c0806]"></i> Fresh Drip</button>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
@@ -706,28 +677,11 @@
                     </div>`;
             }
 
-            // --- VIEW ENGINE F: FORUM BULLETIN LAYOUT ROUTE ---
-            else if (state.currentView === 'COMMUNITY') {
-                target.innerHTML = `
-                    <div class="space-y-6 animate-fadeIn">
-                        <h2 class="text-2xl font-bold tracking-wide uppercase border-b border-[#2d201a] pb-3 text-[#fbbf24]">The Bulletin Board Community</h2>
-                        <div class="bg-[#16100d] border border-[#2d201a] rounded-xl p-6 shadow-md space-y-4">
-                            <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl flex justify-between items-start">
-                                <div class="space-y-1">
-                                    <span class="text-xs font-mono font-bold text-[#fbbf24]">PINNED NOTICE: @cafe_admin</span>
-                                    <h4 class="text-md font-bold text-white font-serif">Welcome to the Anteiku Hub Platform Matrix</h4>
-                                    <p class="text-xs text-[#f5f0eb]/90 font-light max-w-2xl leading-relaxed">Please test the persistent localStorage login parameters by refreshing your active browsing instance. Five baseline essays have been successfully injected into the system feed to ensure proper database indexing functions.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
-            }
-
-            // Re-call Lucide compiler node after each render loop to keep all newly added icons active
+            // Re-call Lucide dynamic asset compiler node to finalize icon injection paths
             lucide.createIcons();
         }
 
-        // --- PLATFORM INSTANTIATION TRIGGER SEED ---
+        // --- PLATFORM ENGINE INSTANTIATION EXECUTOR ---
         render();
     </script>
 </body>
