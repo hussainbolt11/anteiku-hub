@@ -3,14 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- BRANDING IS ABSOLUTE LAW -->
     <title>Anteiku Hub - Read deeply, write freely.</title>
+    <!-- Tailwind CSS Production CDN Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icon Assets library -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Typography Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght=500;700&family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         body { 
-            /* 4. DEEP ESPRESSO GRADIENT BACKGROUND BACKGROUND */
+            /* DEEP ESPRESSO GRADIENT BACKGROUND */
             background: radial-gradient(circle at 50% 40%, #16110f 0%, #0c0806 70%);
             background-color: #0c0806; 
             color: #f5f0eb; 
@@ -36,7 +40,7 @@
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
         
-        /* 4. ANIMATED RISING STEAM LINES DESIGN ELEMENT */
+        /* ANIMATED RISING STEAM LINES DESIGN ELEMENT */
         @keyframes wavy-smoke-drift {
             0% { transform: translateY(100vh) translateX(0) scaleX(1); opacity: 0; }
             10% { opacity: 0.04; }
@@ -64,12 +68,14 @@
 </head>
 <body class="min-h-screen relative overflow-x-hidden select-none">
 
+    <!-- BACKGROUND STEAM VECTORS LAYER -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
         <svg class="steam-line steam-1" width="60" height="200" viewBox="0 0 60 200"><path d="M30,200 C45,150 15,100 30,50 C45,0 30,-50 30,-100" /></svg>
         <svg class="steam-line steam-2" width="60" height="200" viewBox="0 0 60 200"><path d="M30,200 C15,160 45,120 30,80 C15,40 35,0 30,-40" /></svg>
         <svg class="steam-line steam-3" width="60" height="200" viewBox="0 0 60 200"><path d="M30,200 C50,140 20,90 35,40 C50,-10 25,-40 30,-90" /></svg>
     </div>
 
+    <!-- PRIMARY APP MOUNT NODE HUB -->
     <div id="app" class="min-h-screen flex flex-col relative z-10"></div>
 
     <script>
@@ -144,7 +150,7 @@
             "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=120&h=120"
         ];
 
-        // 1. ADD "ALL CATEGORIES" SELECTION DATA ENTRIES
+        // CATEGORIES SELECTION CONFIGURATION INCLUDING "ALL CATEGORIES"
         const categories = [
             { id: '#All', label: 'All Categories', tag: '#All' },
             { id: '#Gaming', label: 'Gaming', tag: '#Gaming' },
@@ -198,9 +204,10 @@
                 profile: profile,
                 databaseArticles: articles,
                 
-                // 1. ALL CATEGORIES BY DEFAULT
+                // ACTIVE FILTER STATE - DEFAULTS TO #All AS REQUIRED
                 activeFilter: '#All',
-                // 2. TRENDING SORT TOGGLE ATOM STATE
+                
+                // TRENDING SORT ATOM STATE
                 isTrendingSorted: false,
                 
                 isCategoryDropdownOpen: false,
@@ -224,7 +231,7 @@
 
         let state = bootstrapCoreEngine();
 
-        // 4. THE BARISTA APPRECIATION POP-UP TOAST METHOD
+        // THE BARISTA APPRECIATION POP-UP TOAST METHOD
         function triggerBaristaAppreciation() {
             state.customToast = { show: true, message: "The Barista appreciates your rating! ☕✨" };
             render();
@@ -420,11 +427,11 @@
 
             state.databaseArticles.unshift(newPost);
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
-            state.activeFilter = '#All'; // Default back to All to display new entry
+            state.activeFilter = '#All'; // Default back to All Categories to view the newly published node
             navigateTo('FEED');
         }
 
-        // KEYBOARD FOCUS PROTECTION METHOD HOOK FOR MODAL INTERSECTIONS
+        // MOBILE KEYBOARD FOCUS PROTECTION METHOD HOOK FOR MODAL INTERSECTIONS
         function handleModalTabTrap(e, containerId) {
             if (e.key !== 'Tab') return;
             const container = document.getElementById(containerId);
@@ -457,6 +464,7 @@
                                 <div class="flex justify-center mb-1">
                                     <div class="p-4 bg-[#231915] border border-[#523b30] rounded-full"><i data-lucide="coffee" class="w-10 h-10 text-[#fbbf24]"></i></div>
                                 </div>
+                                <!-- BRANDING IS ABSOLUTE LAW -->
                                 <h1 class="text-4xl font-bold tracking-wide text-[#fbbf24]">Anteiku Hub</h1>
                                 <p class="text-xs text-[#f5f0eb]/90">Read deeply, write freely.</p>
                             </div>
@@ -477,7 +485,7 @@
                 return;
             }
 
-            // 4. ONBOARDING MODAL WITH FOCUS TRAP RESILIENCE
+            // ONBOARDING SCREEN WITH TRAP RESILIENCE
             if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative z-50">
@@ -508,17 +516,19 @@
                         </div>
                     </div>`;
                 
-                // Mount immediate programmatic focus to first input fields
+                // Mount immediate programmatic focus protection
                 setTimeout(() => { document.getElementById('onboard-name')?.focus(); }, 50);
                 lucide.createIcons();
                 return;
             }
 
-            // OVERALL DESKTOP MAIN APPLICATION FRAMEWORK
+            // OVERALL APPLICATION CORE SYSTEM WORKSPACE
             app.innerHTML = `
+                <!-- STICKY TOP APP HEADER NODE -->
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
                         <i data-lucide="coffee" class="w-5 h-5 text-[#fbbf24] group-hover:rotate-12 transition-transform"></i>
+                        <!-- BRANDING IS ABSOLUTE LAW -->
                         <span class="text-lg font-bold tracking-wider uppercase text-[#fbbf24]">Anteiku Hub</span>
                     </div>
                     
@@ -539,6 +549,7 @@
                 </header>
 
                 <div class="flex flex-1 flex-col md:flex-row relative z-10">
+                    <!-- SIDE NAVIGATION LAYOUT (COMMUNITY COHORT COMPLETELY DELETED) -->
                     <aside class="w-full md:w-64 bg-[#16100d]/90 backdrop-blur-sm border-b md:border-b-0 md:border-r border-[#2d201a] p-6 flex flex-col shrink-0 shadow-2xl">
                         <div class="space-y-4">
                             <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold px-2">Menu Directives</p>
@@ -553,6 +564,7 @@
                     <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden animate-fadeIn" id="view-target"></main>
                 </div>
 
+                <!-- DIALOG PROFILE CONFIGURATION MODAL WINDOW -->
                 ${state.isEditProfileModalOpen ? `
                 <div class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[200] animate-fadeIn">
                     <div id="edit-profile-modal-container" onkeydown="handleModalTabTrap(event, 'edit-profile-modal-container')" class="bg-[#16100d] border border-[#fbbf24]/60 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
@@ -587,6 +599,7 @@
                     </div>
                 </div>` : ''}
 
+                <!-- TOAST POP-UP ALERTS ENGINE LAYER -->
                 ${state.customToast.show ? `
                 <div class="fixed bottom-6 right-6 z-[250] max-w-sm w-full bg-[#1c1410] border-2 border-[#fbbf24] p-4 rounded-xl shadow-2xl shadow-black/80 flex items-center gap-3 animate-fadeIn">
                     <div class="bg-[#fbbf24] text-[#0c0806] p-1.5 rounded-lg shrink-0">
@@ -601,10 +614,10 @@
             if (state.currentView === 'FEED') {
                 let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) ? [...state.databaseArticles] : [...DEFAULT_LOUNGE_POSTS];
                 
-                // 1. ALL CATEGORIES INTERACTIVE MAPPING REDUCER LOGIC
+                // ALL CATEGORIES SELECTION REDUCER INTERACTIVE LOGIC
                 let filtered = state.activeFilter === '#All' ? activeSource : activeSource.filter(a => a.category === state.activeFilter);
 
-                // 2. TRENDING SORT BY LIKES ALGORITHM EXECUTION
+                // PROGRAMMATIC EXACT "TRENDING" SORTING MECHANIC DESCENDING ORDER (MOST LIKES -> LEAST LIKES)
                 if (state.isTrendingSorted) {
                     filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
                 }
@@ -651,6 +664,7 @@
                                     <i data-lucide="heart" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i> ${art.likes || 0} Likes
                                 </span>
                                 
+                                <!-- SIGNATURE 1-TO-5 COFFEE CUP RATING CONSOLE -->
                                 <div class="flex items-center gap-2 bg-[#0c0806] px-3 py-1.5 rounded-lg border border-[#2d201a]">
                                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Aroma:</span>
                                     <div class="flex gap-0.5">${cupsHtml}</div>
@@ -665,6 +679,7 @@
                         <div class="border-b border-[#2d201a] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 z-40 relative">
                             
                             <div class="flex items-center gap-2">
+                                <!-- FILTER DROPDOWN TRIGGER BUTTON CONTAINER WITH ALL CATEGORIES -->
                                 <div class="relative inline-block text-left">
                                     <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#16100d] text-white border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2">
                                         <span>Filter Stream: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
@@ -675,7 +690,8 @@
                                     </div>
                                 </div>
 
-                                <button onclick="state.isTrendingSorted=!state.isTrendingSorted; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm ${state.isTrendingSorted ? 'bg-amber-500 border-amber-500 text-[#0c0806] font-extrabold':'bg-[#16100d] border-[#2d201a] text-white hover:border-[#fbbf24]'}">
+                                <!-- HIGH-CONTRAST TRENDING SORT MECHANIC TOGGLE BUTTON -->
+                                <button onclick="state.isTrendingSorted=!state.isTrendingSorted; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm ${state.isTrendingSorted ? 'bg-amber-500 border-amber-500 text-[#0c0806] font-extrabold' : 'bg-[#16100d] border-[#2d201a] text-white hover:border-[#fbbf24]'}">
                                     <span>🔥 Trending</span>
                                 </button>
                             </div>
@@ -702,6 +718,7 @@
                         <div class="space-y-4">
                             <input type="text" id="w-title" placeholder="Title your essay..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-2xl font-bold text-white focus:outline-none focus:border-[#fbbf24]" />
                             
+                            <!-- CONTENT BANNER RESOURCE WIRE IMAGE ATTACHMENT FIELD -->
                             <div class="bg-[#16100d] border border-[#2d201a] p-4 rounded-xl space-y-2">
                                 <label class="text-xs font-bold uppercase tracking-wider text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="image" class="w-3.5 h-3.5"></i> Attach Feature Image Layout Banner</label>
                                 <input type="url" id="w-feature-image" placeholder="Paste image link URL address here..." class="w-full bg-[#0c0806] border border-[#2d201a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#fbbf24]" />
