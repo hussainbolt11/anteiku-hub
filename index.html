@@ -185,6 +185,13 @@
             }
             localStorage.setItem('anteiku_articles', JSON.stringify(articles));
 
+            // LOAD LIKED TRACKING PERSISTENCE FROM SYSTEM LEDGER
+            let likedArticles = [];
+            const savedLikes = localStorage.getItem(`anteiku_liked_${emailKey}`);
+            if (savedLikes) {
+                try { likedArticles = JSON.parse(savedLikes); } catch(e) { likedArticles = []; }
+            }
+
             return {
                 isAuthenticated: isAuth,
                 currentEmail: currentEmail,
@@ -192,6 +199,7 @@
                 currentView: isAuth && isOnboarded ? 'FEED' : (isAuth ? 'ONBOARDING' : 'LANDING'),
                 profile: profile,
                 databaseArticles: articles,
+                likedArticleIds: likedArticles, // Track exact liked matrix bounds
                 
                 // ROUTING SYSTEM EXTENSION FOR INDIVIDUAL NODES
                 selectedArticleId: null,
@@ -254,14 +262,35 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // STATE CONTROLLER FIX: INFINITE LIKES GLITCH RESOLUTION (ONE LIKE PER USER / TOGGLE CAPABILITY)
         function handleLikeArticle(e, articleId) {
             if (e) e.stopPropagation(); // Shield card selection matrix
-            state.databaseArticles = state.databaseArticles.map(art => {
-                if (art.id === String(articleId)) {
-                    return { ...art, likes: (art.likes || 0) + 1 };
-                }
-                return art;
-            });
+            const targetId = String(articleId);
+            const emailKey = sanitizeEmailKey(state.currentEmail);
+            
+            const hasLiked = state.likedArticleIds.includes(targetId);
+            
+            if (hasLiked) {
+                // UNLIKE ACTION: User clicks a previously liked post -> Remove from array, decrement counters
+                state.likedArticleIds = state.likedArticleIds.filter(id => id !== targetId);
+                state.databaseArticles = state.databaseArticles.map(art => {
+                    if (art.id === targetId) {
+                        return { ...art, likes: Math.max(0, (art.likes || 0) - 1) };
+                    }
+                    return art;
+                });
+            } else {
+                // LIKE ACTION: Append post string ID tokens to verification ledger array, increment target counters
+                state.likedArticleIds.push(targetId);
+                state.databaseArticles = state.databaseArticles.map(art => {
+                    if (art.id === targetId) {
+                        return { ...art, likes: (art.likes || 0) + 1 };
+                    }
+                    return art;
+                });
+            }
+            
+            localStorage.setItem(`anteiku_liked_${emailKey}`, JSON.stringify(state.likedArticleIds));
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
             render();
         }
@@ -289,6 +318,14 @@
                     bio: 'Writing from the corner booth.',
                     followers: 0
                 };
+            }
+
+            // Sync user unique liked arrays upon logging into ledger session contexts
+            const savedLikes = localStorage.getItem(`anteiku_liked_${emailKey}`);
+            if (savedLikes) {
+                try { state.likedArticleIds = JSON.parse(savedLikes); } catch(err) { state.likedArticleIds = []; }
+            } else {
+                state.likedArticleIds = [];
             }
 
             state.onboardingNameValue = state.profile.name || '';
@@ -630,6 +667,7 @@
                     let cupsHtml = '';
                     const currentPostId = art && art.id ? String(art.id) : '';
                     const activeRating = art && typeof art.rating === 'number' ? art.rating : 5;
+                    const isArticleLiked = state.likedArticleIds.includes(currentPostId);
 
                     for (let index = 1; index <= 5; index++) {
                         // CLEANED STATE ROUTINE: LIT PURELY BY ACTIVE STORED RATING VALUE ON CLICK ONLY
@@ -661,18 +699,18 @@
 
                             <h2 class="text-xl font-bold text-[#fbbf24] tracking-wide group-hover:text-amber-400 transition-colors">${art.title}</h2>
                             
-                            <div class="flex flex-col sm:flex-row gap-4 items-start pt-1">
-                                ${art.image ? `
-                                <div class="w-full sm:w-1/3 max-w-[180px] rounded-lg overflow-hidden border border-[#2d201a] aspect-video sm:aspect-square bg-[#0c0806] shrink-0">
-                                    <img src="${art.image}" class="w-full h-full object-cover group-hover:opacity-95 transition-opacity" alt="Article Illustration Graphic" onerror="this.parentNode.style.display='none';" />
-                                </div>` : ''}
-                                
-                                <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-4 flex-1">${art.content || art.body}</p>
+                            <div class="pt-1">
+                                <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-3">${art.content || art.body}</p>
                             </div>
                             
                             <div class="flex items-center justify-between pt-3 border-t border-[#231915]">
-                                <button onclick="handleLikeArticle(event, '${art.id}')" class="text-[11px] font-mono text-gray-400 flex items-center gap-1.5 px-2.5 py-1 bg-[#231915] border border-[#3c2a22] hover:border-amber-500/50 hover:text-white rounded-lg transition-all">
-                                    <i data-lucide="heart" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i> <span>${art.likes || 0} Likes</span>
+                                <button onclick="handleLikeArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                                    isArticleLiked 
+                                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                                        : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
+                                }">
+                                    <i data-lucide="heart" class="w-3.5 h-3.5 ${isArticleLiked ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i> 
+                                    <span>${art.likes || 0} Likes</span>
                                 </button>
                                 
                                 <div class="flex items-center gap-2 bg-[#0c0806] px-3 py-1.5 rounded-lg border border-[#2d201a]" onclick="event.stopPropagation();">
@@ -727,6 +765,7 @@
                 let cupsHtml = '';
                 const currentPostId = post && post.id ? String(post.id) : '';
                 const activeRating = post && typeof post.rating === 'number' ? post.rating : 5;
+                const isArticleLiked = state.likedArticleIds.includes(currentPostId);
 
                 for (let index = 1; index <= 5; index++) {
                     const isLit = (activeRating >= index);
@@ -768,17 +807,21 @@
                                 
                                 <div class="flex flex-col gap-5 pt-2">
                                     ${post.image ? `
-                                    <div class="w-full sm:max-w-sm rounded-xl overflow-hidden border border-[#2d201a] bg-[#0c0806] mx-auto sm:float-left sm:mr-6 sm:mb-4">
-                                        <img src="${post.image}" class="w-full object-cover max-h-[260px]" alt="Article Illustration Graphic" />
+                                    <div class="w-full sm:max-w-md rounded-xl overflow-hidden border border-[#2d201a] bg-[#0c0806] mx-auto sm:float-left sm:mr-6 sm:mb-4 shadow-lg">
+                                        <img src="${post.image}" class="w-full object-cover max-h-[300px]" alt="Article Illustration Graphic" />
                                     </div>` : ''}
 
                                     <p class="text-base text-[#f5f0eb] font-light leading-relaxed whitespace-pre-wrap">${post.content || post.body}</p>
                                 </div>
                                 
                                 <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-[#231915] gap-4 clear-both">
-                                    <button onclick="handleLikeArticle(null, '${post.id}')" class="w-full sm:w-auto px-5 py-2.5 bg-[#231915] border border-[#453026] hover:border-amber-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md">
-                                        <i data-lucide="heart" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
-                                        <span class="text-sm font-mono">Appreciate Node (${post.likes || 0} Likes)</span>
+                                    <button onclick="handleLikeArticle(null, '${post.id}')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border ${
+                                        isArticleLiked 
+                                            ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
+                                            : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
+                                    }">
+                                        <i data-lucide="heart" class="w-4 h-4 ${isArticleLiked ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
+                                        <span class="text-sm font-mono">${isArticleLiked ? 'Liked Node' : 'Appreciate Node'} (${post.likes || 0} Likes)</span>
                                     </button>
 
                                     <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4 bg-[#0c0806] px-4 py-2.5 rounded-xl border border-[#2d201a]">
@@ -832,12 +875,6 @@
                         <div class="space-y-2">
                             <span class="text-[10px] font-mono text-[#fbbf24] bg-[#231915] px-2 py-0.5 rounded border border-[#3c2a22]">${p.category}</span>
                             <h4 class="text-sm font-bold text-[#fbbf24] pt-1 group-hover:text-amber-400">${p.title}</h4>
-                            
-                            ${p.image ? `
-                            <div class="w-full h-16 rounded overflow-hidden opacity-80 group-hover:opacity-100 my-1">
-                                <img src="${p.image}" class="w-full h-full object-cover" alt="" />
-                            </div>` : ''}
-
                             <p class="text-xs text-white font-light line-clamp-2 leading-relaxed">${p.content || p.body}</p>
                         </div>
                     </div>`).join('');
