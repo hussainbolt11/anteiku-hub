@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- BRANDING IS ABSOLUTE LAW -->
     <title>Anteiku Hub - Read deeply, write freely.</title>
-    <!-- Tailwind CSS Production CDN Engine -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icon Assets library -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Typography Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght=500;700&family=Inter:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -68,14 +64,12 @@
 </head>
 <body class="min-h-screen relative overflow-x-hidden select-none">
 
-    <!-- BACKGROUND STEAM VECTORS LAYER -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
         <svg class="steam-line steam-1" width="60" height="200" viewBox="0 0 60 200"><path d="M30,200 C45,150 15,100 30,50 C45,0 30,-50 30,-100" /></svg>
         <svg class="steam-line steam-2" width="60" height="200" viewBox="0 0 60 200"><path d="M30,200 C15,160 45,120 30,80 C15,40 35,0 30,-40" /></svg>
         <svg class="steam-line steam-3" width="60" height="200" viewBox="0 0 60 200"><path d="M30,200 C50,140 20,90 35,40 C50,-10 25,-40 30,-90" /></svg>
     </div>
 
-    <!-- PRIMARY APP MOUNT NODE HUB -->
     <div id="app" class="min-h-screen flex flex-col relative z-10"></div>
 
     <script>
@@ -204,7 +198,10 @@
                 profile: profile,
                 databaseArticles: articles,
                 
-                // ACTIVE FILTER STATE - DEFAULTS TO #All AS REQUIRED
+                // ROUTING SYSTEM EXTENSION FOR INDIVIDUAL NODES
+                selectedArticleId: null,
+                
+                // ACTIVE FILTER STATE - DEFAULTS TO #All
                 activeFilter: '#All',
                 
                 // TRENDING SORT ATOM STATE
@@ -249,9 +246,30 @@
             } else {
                 state.currentView = view;
             }
+            state.selectedArticleId = null;
             state.isCategoryDropdownOpen = false;
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // GLOBAL CLICK HANDLER LOOKUP BY UNIQUE ID STRING PRODUCER
+        function viewArticleNodeDetails(articleId) {
+            state.selectedArticleId = String(articleId);
+            state.currentView = 'ARTICLE_VIEW';
+            render();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleLikeArticle(e, articleId) {
+            if (e) e.stopPropagation(); // Shield card selection matrix
+            state.databaseArticles = state.databaseArticles.map(art => {
+                if (art.id === String(articleId)) {
+                    return { ...art, likes: (art.likes || 0) + 1 };
+                }
+                return art;
+            });
+            localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
+            render();
         }
 
         function handleSignIn(e) {
@@ -395,7 +413,7 @@
 
         function handleRateArticle(articleId, score) {
             state.databaseArticles = state.databaseArticles.map(art => {
-                if (art.id === articleId) {
+                if (art.id === String(articleId)) {
                     return { ...art, rating: score };
                 }
                 return art;
@@ -427,11 +445,11 @@
 
             state.databaseArticles.unshift(newPost);
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
-            state.activeFilter = '#All'; // Default back to All Categories to view the newly published node
+            state.activeFilter = '#All'; // Default back to All Categories
             navigateTo('FEED');
         }
 
-        // MOBILE KEYBOARD FOCUS PROTECTION METHOD HOOK FOR MODAL INTERSECTIONS
+        // MOBILE KEYBOARD FOCUS PROTECTION INTERACTION TRAP
         function handleModalTabTrap(e, containerId) {
             if (e.key !== 'Tab') return;
             const container = document.getElementById(containerId);
@@ -464,7 +482,6 @@
                                 <div class="flex justify-center mb-1">
                                     <div class="p-4 bg-[#231915] border border-[#523b30] rounded-full"><i data-lucide="coffee" class="w-10 h-10 text-[#fbbf24]"></i></div>
                                 </div>
-                                <!-- BRANDING IS ABSOLUTE LAW -->
                                 <h1 class="text-4xl font-bold tracking-wide text-[#fbbf24]">Anteiku Hub</h1>
                                 <p class="text-xs text-[#f5f0eb]/90">Read deeply, write freely.</p>
                             </div>
@@ -485,7 +502,7 @@
                 return;
             }
 
-            // ONBOARDING SCREEN WITH TRAP RESILIENCE
+            // ONBOARDING SCREEN MODAL WITH FOCUS TRAP RESILIENCE
             if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative z-50">
@@ -516,19 +533,16 @@
                         </div>
                     </div>`;
                 
-                // Mount immediate programmatic focus protection
                 setTimeout(() => { document.getElementById('onboard-name')?.focus(); }, 50);
                 lucide.createIcons();
                 return;
             }
 
-            // OVERALL APPLICATION CORE SYSTEM WORKSPACE
+            // OVERALL FRAMEWORK LAYOUT PLATFORM BOOT CONTAINER
             app.innerHTML = `
-                <!-- STICKY TOP APP HEADER NODE -->
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
                         <i data-lucide="coffee" class="w-5 h-5 text-[#fbbf24] group-hover:rotate-12 transition-transform"></i>
-                        <!-- BRANDING IS ABSOLUTE LAW -->
                         <span class="text-lg font-bold tracking-wider uppercase text-[#fbbf24]">Anteiku Hub</span>
                     </div>
                     
@@ -549,12 +563,11 @@
                 </header>
 
                 <div class="flex flex-1 flex-col md:flex-row relative z-10">
-                    <!-- SIDE NAVIGATION LAYOUT (COMMUNITY COHORT COMPLETELY DELETED) -->
                     <aside class="w-full md:w-64 bg-[#16100d]/90 backdrop-blur-sm border-b md:border-b-0 md:border-r border-[#2d201a] p-6 flex flex-col shrink-0 shadow-2xl">
                         <div class="space-y-4">
                             <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold px-2">Menu Directives</p>
                             <nav class="space-y-1">
-                                <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='FEED' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="compass" class="w-4 h-4 text-[#fbbf24]"></i> Main Lounge</button>
+                                <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${(state.currentView==='FEED'||state.currentView==='ARTICLE_VIEW') ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="compass" class="w-4 h-4 text-[#fbbf24]"></i> Main Lounge</button>
                                 <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="pen-tool" class="w-4 h-4 text-[#fbbf24]"></i> Write Article</button>
                                 <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="settings" class="w-4 h-4 text-[#fbbf24]"></i> Account Management</button>
                             </nav>
@@ -564,7 +577,6 @@
                     <main class="flex-1 p-5 md:p-8 max-w-5xl w-full mx-auto overflow-hidden animate-fadeIn" id="view-target"></main>
                 </div>
 
-                <!-- DIALOG PROFILE CONFIGURATION MODAL WINDOW -->
                 ${state.isEditProfileModalOpen ? `
                 <div class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[200] animate-fadeIn">
                     <div id="edit-profile-modal-container" onkeydown="handleModalTabTrap(event, 'edit-profile-modal-container')" class="bg-[#16100d] border border-[#fbbf24]/60 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
@@ -599,7 +611,6 @@
                     </div>
                 </div>` : ''}
 
-                <!-- TOAST POP-UP ALERTS ENGINE LAYER -->
                 ${state.customToast.show ? `
                 <div class="fixed bottom-6 right-6 z-[250] max-w-sm w-full bg-[#1c1410] border-2 border-[#fbbf24] p-4 rounded-xl shadow-2xl shadow-black/80 flex items-center gap-3 animate-fadeIn">
                     <div class="bg-[#fbbf24] text-[#0c0806] p-1.5 rounded-lg shrink-0">
@@ -631,7 +642,7 @@
                         
                         cupsHtml += `
                             <button 
-                                onclick="handleRateArticle('${art.id}', ${index})"
+                                onclick="event.stopPropagation(); handleRateArticle('${art.id}', ${index})"
                                 onmouseenter="state.hoveredRatingId='${art.id}'; state.hoveredRatingValue=${index}; render();"
                                 onmouseleave="state.hoveredRatingId=null; state.hoveredRatingValue=0; render();"
                                 class="p-0.5 transition-transform active:scale-95 duration-100 focus:outline-none"
@@ -646,9 +657,10 @@
                         `;
                     }
 
+                    // BUG RESOLUTION FIXED: CLICK HANDLER DEPLOYS UNIQUE STRING ID ROUTING PROPERTY INSTANTLY
                     return `
-                    <div class="bg-[#16100d] border border-[#2d201a] rounded-xl overflow-hidden hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md flex flex-col">
-                        ${art.image ? `<img src="${art.image}" class="w-full h-48 object-cover border-b border-[#2d201a]" alt="Cover Image" onerror="this.style.display='none';" />` : ''}
+                    <div onclick="viewArticleNodeDetails('${art.id}')" class="bg-[#16100d] border border-[#2d201a] rounded-xl overflow-hidden hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md flex flex-col cursor-pointer group">
+                        ${art.image ? `<img src="${art.image}" class="w-full h-48 object-cover border-b border-[#2d201a] group-hover:opacity-90 transition-opacity" alt="Cover Image" onerror="this.style.display='none';" />` : ''}
                         
                         <div class="p-6 space-y-3">
                             <div class="flex items-center gap-2">
@@ -656,16 +668,15 @@
                                 <span class="text-xs text-gray-400 font-mono ml-1">${art.readTime || '4 min read'}</span>
                                 <span class="text-xs text-gray-200 ml-auto font-medium">By <span class="text-[#fbbf24] font-semibold">${art.author}</span> <span class="text-gray-500 font-mono text-[11px]">(${art.handle || '@writer'})</span></span>
                             </div>
-                            <h2 class="text-xl font-bold text-[#fbbf24] tracking-wide">${art.title}</h2>
-                            <p class="text-sm text-[#f5f0eb] font-light leading-relaxed">${art.content || art.body}</p>
+                            <h2 class="text-xl font-bold text-[#fbbf24] tracking-wide group-hover:text-amber-400 transition-colors">${art.title}</h2>
+                            <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-3">${art.content || art.body}</p>
                             
                             <div class="flex items-center justify-between pt-3 border-t border-[#231915]">
-                                <span class="text-[11px] font-mono text-gray-400 flex items-center gap-1">
-                                    <i data-lucide="heart" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i> ${art.likes || 0} Likes
-                                </span>
+                                <button onclick="handleLikeArticle(event, '${art.id}')" class="text-[11px] font-mono text-gray-400 flex items-center gap-1.5 px-2.5 py-1 bg-[#231915] border border-[#3c2a22] hover:border-amber-500/50 hover:text-white rounded-lg transition-all">
+                                    <i data-lucide="heart" class="w-3.5 h-3.5 text-amber-500 fill-amber-500"></i> <span>${art.likes || 0} Likes</span>
+                                </button>
                                 
-                                <!-- SIGNATURE 1-TO-5 COFFEE CUP RATING CONSOLE -->
-                                <div class="flex items-center gap-2 bg-[#0c0806] px-3 py-1.5 rounded-lg border border-[#2d201a]">
+                                <div class="flex items-center gap-2 bg-[#0c0806] px-3 py-1.5 rounded-lg border border-[#2d201a]" onclick="event.stopPropagation();">
                                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Aroma:</span>
                                     <div class="flex gap-0.5">${cupsHtml}</div>
                                 </div>
@@ -679,7 +690,6 @@
                         <div class="border-b border-[#2d201a] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 z-40 relative">
                             
                             <div class="flex items-center gap-2">
-                                <!-- FILTER DROPDOWN TRIGGER BUTTON CONTAINER WITH ALL CATEGORIES -->
                                 <div class="relative inline-block text-left">
                                     <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#16100d] text-white border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2">
                                         <span>Filter Stream: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
@@ -690,7 +700,6 @@
                                     </div>
                                 </div>
 
-                                <!-- HIGH-CONTRAST TRENDING SORT MECHANIC TOGGLE BUTTON -->
                                 <button onclick="state.isTrendingSorted=!state.isTrendingSorted; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm ${state.isTrendingSorted ? 'bg-amber-500 border-amber-500 text-[#0c0806] font-extrabold' : 'bg-[#16100d] border-[#2d201a] text-white hover:border-[#fbbf24]'}">
                                     <span>🔥 Trending</span>
                                 </button>
@@ -699,6 +708,86 @@
                             <h3 class="text-xs tracking-widest text-[#fbbf24] font-bold uppercase font-serif hidden sm:block">Central Review Desk</h3>
                         </div>
                         <div class="grid grid-cols-1 gap-6">${cardsHtml || '<p class="text-xs text-gray-400 italic">No matching records found.</p>'}</div>
+                    </div>`;
+            }
+
+            // --- ROUTE DECK: SINGLE EXPANDED NODE DETAILED VIEW ---
+            else if (state.currentView === 'ARTICLE_VIEW') {
+                let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) ? state.databaseArticles : DEFAULT_LOUNGE_POSTS;
+                let post = activeSource.find(a => String(a.id) === state.selectedArticleId);
+
+                if (!post) {
+                    target.innerHTML = `
+                        <div class="text-center py-12 space-y-4">
+                            <p class="text-sm text-gray-400 italic">Article node trace has been fragmented or dropped.</p>
+                            <button onclick="navigateTo('FEED')" class="px-4 py-2 bg-[#fbbf24] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg">Return to Lounge</button>
+                        </div>`;
+                    return;
+                }
+
+                let cupsHtml = '';
+                for (let index = 1; index <= 5; index++) {
+                    let isLit = state.hoveredRatingId === post.id 
+                        ? index <= state.hoveredRatingValue 
+                        : index <= (post.rating || 5);
+                    
+                    cupsHtml += `
+                        <button 
+                            onclick="handleRateArticle('${post.id}', ${index})"
+                            onmouseenter="state.hoveredRatingId='${post.id}'; state.hoveredRatingValue=${index}; render();"
+                            onmouseleave="state.hoveredRatingId=null; state.hoveredRatingValue=0; render();"
+                            class="p-1 transition-transform active:scale-95 duration-100 focus:outline-none"
+                            aria-label="Rate ${index} Cups"
+                        >
+                            <i data-lucide="coffee" class="w-6 h-6 transition-colors duration-150 ${
+                                isLit 
+                                    ? 'text-[#fbbf24] fill-[#fbbf24] filter drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]' 
+                                    : 'text-[#453026] fill-transparent'
+                            }"></i>
+                        </button>
+                    `;
+                }
+
+                target.innerHTML = `
+                    <div class="max-w-3xl mx-auto space-y-6">
+                        <button onclick="navigateTo('FEED')" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#fbbf24] transition-colors mb-2">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Lounge Stream
+                        </button>
+
+                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl overflow-hidden shadow-2xl">
+                            ${post.image ? `<img src="${post.image}" class="w-full h-64 md:h-80 object-cover border-b border-[#2d201a]" alt="Cover Graphic" />` : ''}
+                            
+                            <div class="p-6 md:p-8 space-y-5">
+                                <div class="flex flex-wrap items-center gap-3 border-b border-[#231915] pb-4">
+                                    <span class="text-xs font-mono font-bold uppercase text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded">${post.category}</span>
+                                    <span class="text-xs text-gray-400 font-mono flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${post.readTime || '4 min read'}</span>
+                                    
+                                    <div class="sm:ml-auto text-xs text-gray-300">
+                                        Curated by <span class="text-[#fbbf24] font-bold font-serif text-sm">${post.author}</span>
+                                        <span class="text-gray-500 font-mono text-xs block sm:inline sm:ml-1">(${post.handle || '@writer'})</span>
+                                    </div>
+                                </div>
+
+                                <h1 class="text-2xl md:text-4xl font-extrabold tracking-wide text-[#fbbf24] font-serif leading-tight">${post.title}</h1>
+                                
+                                <p class="text-base text-[#f5f0eb] font-light leading-relaxed whitespace-pre-wrap pt-2">${post.content || post.body}</p>
+                                
+                                <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-[#231915] gap-4">
+                                    <button onclick="handleLikeArticle(null, '${post.id}')" class="w-full sm:w-auto px-5 py-2.5 bg-[#231915] border border-[#453026] hover:border-amber-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md">
+                                        <i data-lucide="heart" class="w-4 h-4 text-amber-500 fill-amber-500"></i>
+                                        <span class="text-sm font-mono">Appreciate Node (${post.likes || 0} Likes)</span>
+                                    </button>
+
+                                    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4 bg-[#0c0806] px-4 py-2.5 rounded-xl border border-[#2d201a]">
+                                        <div class="text-left">
+                                            <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider block font-mono">Espresso Roast</span>
+                                            <span class="text-xs text-amber-400/90 font-medium">Aroma Assessment</span>
+                                        </div>
+                                        <div class="flex gap-1">${cupsHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>`;
             }
 
@@ -718,7 +807,6 @@
                         <div class="space-y-4">
                             <input type="text" id="w-title" placeholder="Title your essay..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-2xl font-bold text-white focus:outline-none focus:border-[#fbbf24]" />
                             
-                            <!-- CONTENT BANNER RESOURCE WIRE IMAGE ATTACHMENT FIELD -->
                             <div class="bg-[#16100d] border border-[#2d201a] p-4 rounded-xl space-y-2">
                                 <label class="text-xs font-bold uppercase tracking-wider text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="image" class="w-3.5 h-3.5"></i> Attach Feature Image Layout Banner</label>
                                 <input type="url" id="w-feature-image" placeholder="Paste image link URL address here..." class="w-full bg-[#0c0806] border border-[#2d201a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#fbbf24]" />
@@ -737,11 +825,11 @@
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let dashboardCardsHtml = personalArticles.map(p => `
-                    <div class="bg-[#0c0806] border border-[#2d201a] rounded-xl overflow-hidden shadow flex flex-col">
-                        ${p.image ? `<img src="${p.image}" class="w-full h-24 object-cover opacity-70 border-b border-[#2d201a]" alt="" />` : ''}
+                    <div onclick="viewArticleNodeDetails('${p.id}')" class="bg-[#0c0806] border border-[#2d201a] rounded-xl overflow-hidden shadow flex flex-col cursor-pointer hover:border-[#fbbf24]/40 transition-colors group">
+                        ${p.image ? `<img src="${p.image}" class="w-full h-24 object-cover opacity-70 border-b border-[#2d201a] group-hover:opacity-90" alt="" />` : ''}
                         <div class="p-4 space-y-1.5">
                             <span class="text-[10px] font-mono text-[#fbbf24] bg-[#231915] px-2 py-0.5 rounded border border-[#3c2a22]">${p.category}</span>
-                            <h4 class="text-sm font-bold text-[#fbbf24] pt-1">${p.title}</h4>
+                            <h4 class="text-sm font-bold text-[#fbbf24] pt-1 group-hover:text-amber-400">${p.title}</h4>
                             <p class="text-xs text-white font-light line-clamp-2 leading-relaxed">${p.content || p.body}</p>
                         </div>
                     </div>`).join('');
