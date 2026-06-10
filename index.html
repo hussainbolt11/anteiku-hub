@@ -222,9 +222,9 @@
                 onboardingNameValue: profile.name || '',
                 onboardingUsernameValue: profile.username || '',
                 
-                // CRITICAL FIXED: SAFE HOVER TRACKING STATE SYSTEM TO PREVENT SCREEN DISMISSAL BLANK ERASURES
+                // BULLETPROOF SIMPLE STATE FIELDS TO AVOID CRASHES
                 hoveredRatingId: '',
-                hoveredRatingValue: 0
+                hoverRating: 0
             };
         }
 
@@ -234,7 +234,6 @@
         function triggerBaristaAppreciation() {
             state.customToast = { show: true, message: "The Barista appreciates your rating! ☕✨" };
             render();
-            // Clear prior timeouts explicitly if needed, then slate dismiss
             if (window.toastTimer) clearTimeout(window.toastTimer);
             window.toastTimer = setTimeout(() => {
                 state.customToast.show = false;
@@ -252,9 +251,8 @@
             }
             state.selectedArticleId = null;
             state.isCategoryDropdownOpen = false;
-            // Clean hover remnants to keep space sterile
             state.hoveredRatingId = '';
-            state.hoveredRatingValue = 0;
+            state.hoverRating = 0;
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -642,17 +640,24 @@
 
                 let cardsHtml = filtered.map(art => {
                     let cupsHtml = '';
+                    
+                    // DEFENSIVE LOCAL ATOMS TO PREVENT UNDEFINED EVALUATION LOOP CRASHES
+                    const currentPostId = art && art.id ? String(art.id) : '';
+                    const activeRating = art && typeof art.rating === 'number' ? art.rating : 5;
+                    const isTargetedPost = (state.hoveredRatingId === currentPostId);
+                    const currentHoverVal = isTargetedPost ? state.hoverRating : 0;
+
                     for (let index = 1; index <= 5; index++) {
-                        // CRITICAL RESILIENT RENDER HOVER EVALUATOR MATCHING LOGIC
-                        let isLit = (state.hoveredRatingId === String(art.id))
-                            ? index <= state.hoveredRatingValue 
-                            : index <= (art.rating || 5);
+                        // STRICT BUG-FIX CONDITIONAL DESIGNER METRIC: (hoverRating || activeRating) >= cupNumber
+                        const isLit = isTargetedPost 
+                            ? (currentHoverVal >= index) 
+                            : (activeRating >= index);
                         
                         cupsHtml += `
                             <button 
-                                onclick="event.stopPropagation(); handleRateArticle('${art.id}', ${index});"
-                                onmouseenter="event.stopPropagation(); state.hoveredRatingId='${art.id}'; state.hoveredRatingValue=${index}; render();"
-                                onmouseleave="event.stopPropagation(); state.hoveredRatingId=''; state.hoveredRatingValue=0; render();"
+                                onclick="event.stopPropagation(); handleRateArticle('${currentPostId}', ${index});"
+                                onmouseenter="event.stopPropagation(); state.hoveredRatingId='${currentPostId}'; state.hoverRating=${index}; render();"
+                                onmouseleave="event.stopPropagation(); state.hoveredRatingId=''; state.hoverRating=0; render();"
                                 class="p-0.5 transition-transform active:scale-95 duration-100 focus:outline-none"
                                 aria-label="Rate ${index} Cups"
                             >
@@ -714,7 +719,7 @@
 
                             <h3 class="text-xs tracking-widest text-[#fbbf24] font-bold uppercase font-serif hidden sm:block">Central Review Desk</h3>
                         </div>
-                        <div class="grid grid-cols-1 gap-6">${cardsHtml || '<p class="text-xs text-gray-400 italic">No matching records found.</p>'}</div>
+                        <div class="grid grid-cols-1 gap-6">${cardsHtml || '<p class="text-xs text-gray-400 italic p-4 text-center">No matching records found in this stream category.</p>'}</div>
                     </div>`;
             }
 
@@ -733,16 +738,21 @@
                 }
 
                 let cupsHtml = '';
+                const currentPostId = post && post.id ? String(post.id) : '';
+                const activeRating = post && typeof post.rating === 'number' ? post.rating : 5;
+                const isTargetedPost = (state.hoveredRatingId === currentPostId);
+                const currentHoverVal = isTargetedPost ? state.hoverRating : 0;
+
                 for (let index = 1; index <= 5; index++) {
-                    let isLit = (state.hoveredRatingId === String(post.id))
-                        ? index <= state.hoveredRatingValue 
-                        : index <= (post.rating || 5);
+                    const isLit = isTargetedPost 
+                        ? (currentHoverVal >= index) 
+                        : (activeRating >= index);
                     
                     cupsHtml += `
                         <button 
-                            onclick="handleRateArticle('${post.id}', ${index});"
-                            onmouseenter="state.hoveredRatingId='${post.id}'; state.hoveredRatingValue=${index}; render();"
-                            onmouseleave="state.hoveredRatingId=''; state.hoveredRatingValue=0; render();"
+                            onclick="handleRateArticle('${currentPostId}', ${index});"
+                            onmouseenter="state.hoveredRatingId='${currentPostId}'; state.hoverRating=${index}; render();"
+                            onmouseleave="state.hoveredRatingId=''; state.hoverRating=0; render();"
                             class="p-1 transition-transform active:scale-95 duration-100 focus:outline-none"
                             aria-label="Rate ${index} Cups"
                         >
