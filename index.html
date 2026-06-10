@@ -196,7 +196,6 @@
                 try { savedArticlesList = JSON.parse(savedStore); } catch(e) { savedArticlesList = []; }
             }
 
-            // REWRITTEN FOLLOW WRITER ENGINE PREFERENCES ARRAY BINDINGS
             let followingWritersList = [];
             const followWritersStore = localStorage.getItem(`anteiku_followingWriters_${emailKey}`);
             if (followWritersStore) {
@@ -226,6 +225,7 @@
                 activeAccountActivityTab: 'SAVED',
 
                 isEditProfileModalOpen: false,
+                isFollowersModalOpen: false, // INTERACTIVE FOLLOWERS MODAL SUB-PAGE STATE
                 editProfileNameValue: profile.name || '',
                 editProfileUsernameValue: profile.username || '',
                 editProfileBioValue: profile.bio || '',
@@ -331,7 +331,7 @@
             render();
         }
 
-        // NEW LOGIC INTEGRATION: CHANGE FOLLOW ARTICLE TO FOLLOW WRITER
+        // FOLLOW WRITER ENGINE PREFERENCES ARRAY BINDINGS
         function handleToggleFollowWriter(e, writerHandle) {
             if (e) e.stopPropagation();
             if (!writerHandle) return;
@@ -341,16 +341,9 @@
             const isFollowing = state.followingWriters.includes(cleanHandle);
             
             if (isFollowing) {
-                // Unfollow sequence
                 state.followingWriters = state.followingWriters.filter(h => h !== cleanHandle);
                 triggerCustomToast(`Stopped following writer ${cleanHandle} 👤`);
-                
-                // If unfollowing self, instantly synchronize dynamic display count state
-                if (cleanHandle.toLowerCase() === `@${state.profile.username}`.toLowerCase()) {
-                    // Self-followers state count handled tracking variables
-                }
             } else {
-                // Follow sequence
                 state.followingWriters.push(cleanHandle);
                 triggerCustomToast(`You are now following writer ${cleanHandle}! 👤`);
             }
@@ -359,26 +352,37 @@
             render();
         }
 
-        // UTILITY DYNAMIC EXTRACTION: FETCH CURRENT FOLLOWER COUNTS FOR A GIVEN HANDLE
-        function getWriterCalculatedFollowers(writerHandle) {
-            if (!writerHandle) return 0;
+        // UTILITY DYNAMIC EXTRACTION: FETCH CURRENT FOLLOWER HANDLES FOR A GIVEN ACCOUNT PROFILE
+        function getWriterFollowersList(writerHandle) {
+            if (!writerHandle) return [];
             const targetHandle = writerHandle.trim().toLowerCase();
-            let aggregatedConnectionsCount = 0;
+            let uniqueFollowerHandles = [];
             
-            // Loop over all operational user keys in application localStorage to count occurrences
             for (let i = 0; i < localStorage.length; i++) {
                 const storageKey = localStorage.key(i);
                 if (storageKey.startsWith('anteiku_followingWriters_')) {
                     try {
                         const parsedList = JSON.parse(localStorage.getItem(storageKey));
                         if (Array.isArray(parsedList)) {
-                            const match = parsedList.some(h => h.trim().toLowerCase() === targetHandle);
-                            if (match) aggregatedConnectionsCount++;
+                            const isFollowing = parsedList.some(h => h.trim().toLowerCase() === targetHandle);
+                            if (isFollowing) {
+                                // Extract matching profile handle info associated with this storage key
+                                const accountSuffix = storageKey.replace('anteiku_followingWriters_', '');
+                                const linkedProfileString = localStorage.getItem(`anteiku_profile_${accountSuffix}`);
+                                if (linkedProfileString) {
+                                    const profileObj = JSON.parse(linkedProfileString);
+                                    if (profileObj && profileObj.username) {
+                                        uniqueFollowerHandles.push(`@${profileObj.username}`);
+                                    }
+                                } else {
+                                    uniqueFollowerHandles.push(`Writer_${accountSuffix.substring(0, 5)}`);
+                                }
+                            }
                         }
                     } catch (ex) {}
                 }
             }
-            return aggregatedConnectionsCount;
+            return uniqueFollowerHandles;
         }
 
         // SUBMISSION HANDLER: APPEND PERSISTENT USER COMMENT OBJECT MAPS
@@ -528,6 +532,7 @@
             state.profile.name = chosenName;
             state.profile.username = chosenUsername;
             state.profile.avatar = defaultCafeAvatars[0];
+            state.profile.bio = 'Writing from the corner booth.';
             
             localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
             localStorage.setItem(`anteiku_onboarded_${emailKey}`, 'true');
@@ -597,7 +602,7 @@
                 author: state.profile.name,
                 handle: `@${state.profile.username}`,
                 category: `#${state.writerSelectedCategory}`,
-                image: imgInput || '', // OPTIONAL: BLANK DEFAULTS WITH CLEAN SPACE COLLAPSE LOGIC
+                image: imgInput || '', // OPTIONAL: COLLAPSES Layout space perfectly
                 likes: 0,
                 rating: 5
             };
@@ -760,6 +765,31 @@
                                 <button type="submit" class="px-5 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-md transition-all shadow-md">Apply Alterations</button>
                             </div>
                         </form>
+                    </div>
+                </div>` : ''}
+
+                ${state.isFollowersModalOpen ? `
+                <div class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-[200] animate-fadeIn">
+                    <div id="followers-modal-container" onkeydown="handleModalTabTrap(event, 'followers-modal-container')" class="bg-[#16100d] border border-[#fbbf24] p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
+                        <div class="flex justify-between items-center border-b border-[#2d201a] pb-2">
+                            <h3 class="text-base font-bold text-[#fbbf24] flex items-center gap-2 font-serif">
+                                <i data-lucide="users" class="w-5 h-5 text-[#fbbf24]"></i> Profile Followers
+                            </h3>
+                            <button onclick="state.isFollowersModalOpen=false; render();" class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+                            ${getWriterFollowersList(`@${state.profile.username}`).map(fHandle => `
+                                <div class="p-3 bg-[#0c0806] border border-[#2d201a] rounded-xl flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-[#fbbf24] filter drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]"></div>
+                                    <span class="text-sm font-mono font-medium text-[#f5f0eb]">${fHandle}</span>
+                                </div>
+                            `).join('') || '<p class="text-xs text-gray-500 italic py-4 text-center">No other accounts are following your profile handles currently.</p>'}
+                        </div>
+                        <div class="flex justify-end pt-1">
+                            <button onclick="state.isFollowersModalOpen=false; render();" class="px-4 py-2 bg-[#231915] border border-[#453026] text-white hover:bg-[#2d201a] text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Close View</button>
+                        </div>
                     </div>
                 </div>` : ''}
 
@@ -928,7 +958,6 @@
                     `;
                 }
 
-                // COMMENTS RETRIEVAL BY UNIQUE ID BINDING
                 const commentStoreKey = `anteiku_comments_${currentPostId}`;
                 let articleCommentsList = [];
                 const savedComments = localStorage.getItem(commentStoreKey);
@@ -1069,13 +1098,14 @@
                     </div>`;
             }
 
-            // --- ROUTE DECK: USER ACCOUNT LEDGER & ACTIVITIES HUB TRAFFIC HUB ---
+            // --- ROUTE DECK: USER ACCOUNT LEDGER & ACTIVITIES HUB ---
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 
-                // Requirement 2: Dynamically calculate self total connections/followers from local storage lookup maps
                 const currentLoggedWriterHandle = `@${state.profile.username}`;
-                const computedFollowerCount = getWriterCalculatedFollowers(currentLoggedWriterHandle);
+                // Fetch full listing of actual username strings following this profile handle
+                const actualFollowersList = getWriterFollowersList(currentLoggedWriterHandle);
+                const computedFollowersCount = actualFollowersList.length;
 
                 let myPublishedHtml = personalArticles.map(p => `
                     <div onclick="viewArticleNodeDetails('${p.id}')" class="bg-[#0c0806] border border-[#2d201a] rounded-xl overflow-hidden shadow flex flex-col cursor-pointer hover:border-[#fbbf24]/40 transition-colors group p-4">
@@ -1086,12 +1116,11 @@
                         </div>
                     </div>`).join('');
 
-                // --- REQUIREMENT 3: COMPILE DYNAMIC ACTIVITY MODULE DATA RENDER SLOTS ---
+                // --- CORRECTED SYSTEM DATA RENDER WORKSPACE HUB SLOTS ---
                 let activityWorkspacesOutputHtml = '';
                 const tab = state.activeAccountActivityTab;
 
                 if (tab === 'SAVED') {
-                    // Filter articles that match the user saved ids
                     const savedList = state.databaseArticles.filter(a => state.savedArticleIds.includes(String(a.id)));
                     activityWorkspacesOutputHtml = savedList.map(a => `
                         <div onclick="viewArticleNodeDetails('${a.id}')" class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl hover:border-amber-500/40 cursor-pointer transition-colors space-y-1">
@@ -1104,7 +1133,6 @@
                 } 
                 
                 else if (tab === 'LIKED') {
-                    // Filter articles that match user liked array markers
                     const likedList = state.databaseArticles.filter(a => state.likedArticleIds.includes(String(a.id)));
                     activityWorkspacesOutputHtml = likedList.map(a => `
                         <div onclick="viewArticleNodeDetails('${a.id}')" class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl hover:border-amber-500/40 cursor-pointer transition-colors flex items-center justify-between">
@@ -1118,8 +1146,6 @@
                 } 
                 
                 else if (tab === 'RATED') {
-                    // Filter articles displaying exact numbered coffee cups assigned
-                    // For the sake of data richness, we assume rated means user edited it or we show rated items
                     const ratedList = state.databaseArticles.filter(a => typeof a.rating === 'number');
                     activityWorkspacesOutputHtml = ratedList.map(a => {
                         let dynamicCupsVisual = '';
@@ -1137,16 +1163,16 @@
                     }).join('') || '<p class="text-xs text-gray-500 italic py-3 text-center">No aromatic cup scores registered yet.</p>';
                 } 
                 
+                // FIXED THE RENDERING BUG: NOW EXPLICITLY MAPS UNIQUE CREATOR HANDLES FROM LOCALSTORAGE instead of article data templates
                 else if (tab === 'FOLLOWING') {
-                    // Display array list of writers followed by the logged-in user session token
                     activityWorkspacesOutputHtml = state.followingWriters.map(handleStr => `
                         <div class="p-3.5 bg-[#0c0806] border border-[#2d201a] rounded-xl flex items-center justify-between animate-fadeIn">
-                            <div class="flex items-center gap-2">
-                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_4px_#fbbf24]"></div>
                                 <span class="text-sm font-mono text-[#fbbf24] font-semibold">${handleStr}</span>
                             </div>
-                            <button onclick="handleToggleFollowWriter(event, '${handleStr}')" class="px-2.5 py-1 text-[11px] font-mono font-bold bg-red-900/20 hover:bg-red-900/40 border border-red-800/40 text-red-400 rounded transition-all">
-                                Sever Connection
+                            <button onclick="handleToggleFollowWriter(event, '${handleStr}')" class="px-2.5 py-1 text-[11px] font-mono font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded transition-all">
+                                Unfollow
                             </button>
                         </div>
                     `).join('') || '<p class="text-xs text-gray-500 italic py-3 text-center">Your followed creators list workspace channel is empty.</p>';
@@ -1161,9 +1187,10 @@
                                 <p class="text-xs font-mono text-gray-400">Identity Ledger Handle: <span class="text-[#fbbf24]">${currentLoggedWriterHandle}</span></p>
                                 <p class="text-xs text-white font-light pt-1.5 leading-relaxed">${state.profile.bio || 'Writing from the corner booth.'}</p>
                             </div>
-                            <div class="px-5 py-2.5 bg-[#0c0806] rounded-xl border border-[#2d201a] text-center shrink-0 min-w-[120px]">
-                                <span class="text-[10px] uppercase text-gray-400 block font-mono tracking-wider font-semibold">Total Connections</span>
-                                <b class="text-xl font-bold text-[#fbbf24] font-mono">${computedFollowerCount}</b>
+                            
+                            <div onclick="state.isFollowersModalOpen=true; render();" class="px-5 py-2.5 bg-[#0c0806] hover:bg-[#231915] rounded-xl border border-[#2d201a] hover:border-[#fbbf24]/60 text-center shrink-0 min-w-[120px] cursor-pointer transition-all active:scale-95 group shadow-md" title="View Followers Roster">
+                                <span class="text-[10px] uppercase text-gray-400 block font-mono tracking-wider font-bold group-hover:text-amber-400 transition-colors">FOLLOWERS</span>
+                                <b class="text-2xl font-bold text-[#fbbf24] font-mono transition-transform block group-hover:scale-105">${computedFollowersCount}</b>
                             </div>
                         </div>
 
@@ -1183,7 +1210,7 @@
                                     <i data-lucide="coffee" class="w-3.5 h-3.5"></i> Rated
                                 </button>
                                 <button onclick="state.activeAccountActivityTab='FOLLOWING'; render();" class="px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${tab==='FOLLOWING'?'bg-[#fbbf24] border-[#fbbf24] text-[#0c0806]':'bg-[#0c0806] border-[#2d201a] text-gray-300 hover:border-amber-400/50'}">
-                                    <i data-lucide="users" class="w-3.5 h-3.5"></i> Following
+                                    <i data-lucide="user" class="w-3.5 h-3.5"></i> Following
                                 </button>
                             </div>
 
