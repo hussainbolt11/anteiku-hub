@@ -220,11 +220,7 @@
                 editCustomAvatarSelected: false,
 
                 onboardingNameValue: profile.name || '',
-                onboardingUsernameValue: profile.username || '',
-                
-                // BULLETPROOF SIMPLE STATE FIELDS TO AVOID CRASHES
-                hoveredRatingId: '',
-                hoverRating: 0
+                onboardingUsernameValue: profile.username || ''
             };
         }
 
@@ -251,8 +247,6 @@
             }
             state.selectedArticleId = null;
             state.isCategoryDropdownOpen = false;
-            state.hoveredRatingId = '';
-            state.hoverRating = 0;
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -640,24 +634,16 @@
 
                 let cardsHtml = filtered.map(art => {
                     let cupsHtml = '';
-                    
-                    // DEFENSIVE LOCAL ATOMS TO PREVENT UNDEFINED EVALUATION LOOP CRASHES
                     const currentPostId = art && art.id ? String(art.id) : '';
                     const activeRating = art && typeof art.rating === 'number' ? art.rating : 5;
-                    const isTargetedPost = (state.hoveredRatingId === currentPostId);
-                    const currentHoverVal = isTargetedPost ? state.hoverRating : 0;
 
                     for (let index = 1; index <= 5; index++) {
-                        // STRICT BUG-FIX CONDITIONAL DESIGNER METRIC: (hoverRating || activeRating) >= cupNumber
-                        const isLit = isTargetedPost 
-                            ? (currentHoverVal >= index) 
-                            : (activeRating >= index);
+                        // CLEANED STATE ROUTINE: LIT PURELY BY ACTIVE STORED RATING VALUE ON CLICK ONLY
+                        const isLit = (activeRating >= index);
                         
                         cupsHtml += `
                             <button 
                                 onclick="event.stopPropagation(); handleRateArticle('${currentPostId}', ${index});"
-                                onmouseenter="event.stopPropagation(); state.hoveredRatingId='${currentPostId}'; state.hoverRating=${index}; render();"
-                                onmouseleave="event.stopPropagation(); state.hoveredRatingId=''; state.hoverRating=0; render();"
                                 class="p-0.5 transition-transform active:scale-95 duration-100 focus:outline-none"
                                 aria-label="Rate ${index} Cups"
                             >
@@ -671,16 +657,22 @@
                     }
 
                     return `
-                    <div onclick="viewArticleNodeDetails('${art.id}')" class="bg-[#16100d] border border-[#2d201a] rounded-xl overflow-hidden hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md flex flex-col cursor-pointer group">
-                        ${art.image ? `<img src="${art.image}" class="w-full h-48 object-cover border-b border-[#2d201a] group-hover:opacity-90 transition-opacity" alt="Cover Image" onerror="this.style.display='none';" />` : ''}
+                    <div onclick="viewArticleNodeDetails('${art.id}')" class="bg-[#16100d] border border-[#2d201a] rounded-xl overflow-hidden hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md flex flex-col cursor-pointer group p-6">
                         
-                        <div class="p-6 space-y-3">
+                        <div class="space-y-4">
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] font-mono font-bold uppercase text-[#0c0806] bg-[#fbbf24] px-2 py-0.5 rounded">${art.category}</span>
                                 <span class="text-xs text-gray-400 font-mono ml-1">${art.readTime || '4 min read'}</span>
                                 <span class="text-xs text-gray-200 ml-auto font-medium">By <span class="text-[#fbbf24] font-semibold">${art.author}</span> <span class="text-gray-500 font-mono text-[11px]">(${art.handle || '@writer'})</span></span>
                             </div>
+
                             <h2 class="text-xl font-bold text-[#fbbf24] tracking-wide group-hover:text-amber-400 transition-colors">${art.title}</h2>
+                            
+                            ${art.image ? `
+                            <div class="w-full my-3 rounded-lg overflow-hidden border border-[#2d201a] max-h-60 bg-[#0c0806]">
+                                <img src="${art.image}" class="w-full h-full object-cover group-hover:opacity-95 transition-opacity" alt="Article Visual Illustration" onerror="this.parentNode.style.display='none';" />
+                            </div>` : ''}
+
                             <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-3">${art.content || art.body}</p>
                             
                             <div class="flex items-center justify-between pt-3 border-t border-[#231915]">
@@ -740,19 +732,13 @@
                 let cupsHtml = '';
                 const currentPostId = post && post.id ? String(post.id) : '';
                 const activeRating = post && typeof post.rating === 'number' ? post.rating : 5;
-                const isTargetedPost = (state.hoveredRatingId === currentPostId);
-                const currentHoverVal = isTargetedPost ? state.hoverRating : 0;
 
                 for (let index = 1; index <= 5; index++) {
-                    const isLit = isTargetedPost 
-                        ? (currentHoverVal >= index) 
-                        : (activeRating >= index);
+                    const isLit = (activeRating >= index);
                     
                     cupsHtml += `
                         <button 
                             onclick="handleRateArticle('${currentPostId}', ${index});"
-                            onmouseenter="state.hoveredRatingId='${currentPostId}'; state.hoverRating=${index}; render();"
-                            onmouseleave="state.hoveredRatingId=''; state.hoverRating=0; render();"
                             class="p-1 transition-transform active:scale-95 duration-100 focus:outline-none"
                             aria-label="Rate ${index} Cups"
                         >
@@ -771,10 +757,9 @@
                             <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Lounge Stream
                         </button>
 
-                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl overflow-hidden shadow-2xl">
-                            ${post.image ? `<img src="${post.image}" class="w-full h-64 md:h-80 object-cover border-b border-[#2d201a]" alt="Cover Graphic" />` : ''}
+                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8">
                             
-                            <div class="p-6 md:p-8 space-y-5">
+                            <div class="space-y-5">
                                 <div class="flex flex-wrap items-center gap-3 border-b border-[#231915] pb-4">
                                     <span class="text-xs font-mono font-bold uppercase text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded">${post.category}</span>
                                     <span class="text-xs text-gray-400 font-mono flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${post.readTime || '4 min read'}</span>
@@ -787,6 +772,11 @@
 
                                 <h1 class="text-2xl md:text-4xl font-extrabold tracking-wide text-[#fbbf24] font-serif leading-tight">${post.title}</h1>
                                 
+                                ${post.image ? `
+                                <div class="w-full my-4 rounded-xl overflow-hidden border border-[#2d201a] bg-[#0c0806]">
+                                    <img src="${post.image}" class="w-full object-cover max-h-[400px]" alt="Article Illustration Graphic" />
+                                </div>` : ''}
+
                                 <p class="text-base text-[#f5f0eb] font-light leading-relaxed whitespace-pre-wrap pt-2">${post.content || post.body}</p>
                                 
                                 <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-[#231915] gap-4">
@@ -842,11 +832,16 @@
             else if (state.currentView === 'ACCOUNT') {
                 let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
                 let dashboardCardsHtml = personalArticles.map(p => `
-                    <div onclick="viewArticleNodeDetails('${p.id}')" class="bg-[#0c0806] border border-[#2d201a] rounded-xl overflow-hidden shadow flex flex-col cursor-pointer hover:border-[#fbbf24]/40 transition-colors group">
-                        ${p.image ? `<img src="${p.image}" class="w-full h-24 object-cover opacity-70 border-b border-[#2d201a] group-hover:opacity-90" alt="" />` : ''}
-                        <div class="p-4 space-y-1.5">
+                    <div onclick="viewArticleNodeDetails('${p.id}')" class="bg-[#0c0806] border border-[#2d201a] rounded-xl overflow-hidden shadow flex flex-col cursor-pointer hover:border-[#fbbf24]/40 transition-colors group p-4">
+                        <div class="space-y-2">
                             <span class="text-[10px] font-mono text-[#fbbf24] bg-[#231915] px-2 py-0.5 rounded border border-[#3c2a22]">${p.category}</span>
                             <h4 class="text-sm font-bold text-[#fbbf24] pt-1 group-hover:text-amber-400">${p.title}</h4>
+                            
+                            ${p.image ? `
+                            <div class="w-full h-16 rounded overflow-hidden opacity-80 group-hover:opacity-100 my-1">
+                                <img src="${p.image}" class="w-full h-full object-cover" alt="" />
+                            </div>` : ''}
+
                             <p class="text-xs text-white font-light line-clamp-2 leading-relaxed">${p.content || p.body}</p>
                         </div>
                     </div>`).join('');
