@@ -221,7 +221,9 @@
 
                 onboardingNameValue: profile.name || '',
                 onboardingUsernameValue: profile.username || '',
-                hoveredRatingId: null,
+                
+                // CRITICAL FIXED: SAFE HOVER TRACKING STATE SYSTEM TO PREVENT SCREEN DISMISSAL BLANK ERASURES
+                hoveredRatingId: '',
                 hoveredRatingValue: 0
             };
         }
@@ -232,7 +234,9 @@
         function triggerBaristaAppreciation() {
             state.customToast = { show: true, message: "The Barista appreciates your rating! ☕✨" };
             render();
-            setTimeout(() => {
+            // Clear prior timeouts explicitly if needed, then slate dismiss
+            if (window.toastTimer) clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
                 state.customToast.show = false;
                 render();
             }, 3500);
@@ -248,6 +252,9 @@
             }
             state.selectedArticleId = null;
             state.isCategoryDropdownOpen = false;
+            // Clean hover remnants to keep space sterile
+            state.hoveredRatingId = '';
+            state.hoveredRatingValue = 0;
             render();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -414,7 +421,7 @@
         function handleRateArticle(articleId, score) {
             state.databaseArticles = state.databaseArticles.map(art => {
                 if (art.id === String(articleId)) {
-                    return { ...art, rating: score };
+                    return { ...art, rating: parseInt(score, 10) };
                 }
                 return art;
             });
@@ -636,15 +643,16 @@
                 let cardsHtml = filtered.map(art => {
                     let cupsHtml = '';
                     for (let index = 1; index <= 5; index++) {
-                        let isLit = state.hoveredRatingId === art.id 
+                        // CRITICAL RESILIENT RENDER HOVER EVALUATOR MATCHING LOGIC
+                        let isLit = (state.hoveredRatingId === String(art.id))
                             ? index <= state.hoveredRatingValue 
                             : index <= (art.rating || 5);
                         
                         cupsHtml += `
                             <button 
-                                onclick="event.stopPropagation(); handleRateArticle('${art.id}', ${index})"
-                                onmouseenter="state.hoveredRatingId='${art.id}'; state.hoveredRatingValue=${index}; render();"
-                                onmouseleave="state.hoveredRatingId=null; state.hoveredRatingValue=0; render();"
+                                onclick="event.stopPropagation(); handleRateArticle('${art.id}', ${index});"
+                                onmouseenter="event.stopPropagation(); state.hoveredRatingId='${art.id}'; state.hoveredRatingValue=${index}; render();"
+                                onmouseleave="event.stopPropagation(); state.hoveredRatingId=''; state.hoveredRatingValue=0; render();"
                                 class="p-0.5 transition-transform active:scale-95 duration-100 focus:outline-none"
                                 aria-label="Rate ${index} Cups"
                             >
@@ -657,7 +665,6 @@
                         `;
                     }
 
-                    // BUG RESOLUTION FIXED: CLICK HANDLER DEPLOYS UNIQUE STRING ID ROUTING PROPERTY INSTANTLY
                     return `
                     <div onclick="viewArticleNodeDetails('${art.id}')" class="bg-[#16100d] border border-[#2d201a] rounded-xl overflow-hidden hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md flex flex-col cursor-pointer group">
                         ${art.image ? `<img src="${art.image}" class="w-full h-48 object-cover border-b border-[#2d201a] group-hover:opacity-90 transition-opacity" alt="Cover Image" onerror="this.style.display='none';" />` : ''}
@@ -727,15 +734,15 @@
 
                 let cupsHtml = '';
                 for (let index = 1; index <= 5; index++) {
-                    let isLit = state.hoveredRatingId === post.id 
+                    let isLit = (state.hoveredRatingId === String(post.id))
                         ? index <= state.hoveredRatingValue 
                         : index <= (post.rating || 5);
                     
                     cupsHtml += `
                         <button 
-                            onclick="handleRateArticle('${post.id}', ${index})"
+                            onclick="handleRateArticle('${post.id}', ${index});"
                             onmouseenter="state.hoveredRatingId='${post.id}'; state.hoveredRatingValue=${index}; render();"
-                            onmouseleave="state.hoveredRatingId=null; state.hoveredRatingValue=0; render();"
+                            onmouseleave="state.hoveredRatingId=''; state.hoveredRatingValue=0; render();"
                             class="p-1 transition-transform active:scale-95 duration-100 focus:outline-none"
                             aria-label="Rate ${index} Cups"
                         >
