@@ -192,6 +192,19 @@
                 try { likedArticles = JSON.parse(savedLikes); } catch(e) { likedArticles = []; }
             }
 
+            // EXTRACTION UTILITIES FOR SOCIAL HOOKS SYSTEM (SAVES & FOLLOWS SYSTEM STATE)
+            let savedArticlesList = [];
+            const savedStore = localStorage.getItem(`anteiku_saved_${emailKey}`);
+            if (savedStore) {
+                try { savedArticlesList = JSON.parse(savedStore); } catch(e) { savedArticlesList = []; }
+            }
+
+            let followedArticlesList = [];
+            const followedStore = localStorage.getItem(`anteiku_followed_${emailKey}`);
+            if (followedStore) {
+                try { followedArticlesList = JSON.parse(followedStore); } catch(e) { followedArticlesList = []; }
+            }
+
             return {
                 isAuthenticated: isAuth,
                 currentEmail: currentEmail,
@@ -199,7 +212,9 @@
                 currentView: isAuth && isOnboarded ? 'FEED' : (isAuth ? 'ONBOARDING' : 'LANDING'),
                 profile: profile,
                 databaseArticles: articles,
-                likedArticleIds: likedArticles, // Track exact liked matrix bounds
+                likedArticleIds: likedArticles,
+                savedArticleIds: savedArticlesList,        // Tracks saved user index pointers
+                followedArticleIds: followedArticlesList,  // Tracks followed thread options
                 
                 // ROUTING SYSTEM EXTENSION FOR INDIVIDUAL NODES
                 selectedArticleId: null,
@@ -240,6 +255,16 @@
             }, 3500);
         }
 
+        function triggerCustomToast(msg) {
+            state.customToast = { show: true, message: msg };
+            render();
+            if (window.toastSystemTimer) clearTimeout(window.toastSystemTimer);
+            window.toastSystemTimer = setTimeout(() => {
+                state.customToast.show = false;
+                render();
+            }, 3000);
+        }
+
         function navigateTo(view) {
             if (!state.isAuthenticated) {
                 state.currentView = 'LANDING';
@@ -262,16 +287,15 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // STATE CONTROLLER FIX: INFINITE LIKES GLITCH RESOLUTION (ONE LIKE PER USER / TOGGLE CAPABILITY)
+        // STATE CONTROLLER FIX: ONE LIKE PER USER SYSTEM CAPABILITY
         function handleLikeArticle(e, articleId) {
-            if (e) e.stopPropagation(); // Shield card selection matrix
+            if (e) e.stopPropagation(); 
             const targetId = String(articleId);
             const emailKey = sanitizeEmailKey(state.currentEmail);
             
             const hasLiked = state.likedArticleIds.includes(targetId);
             
             if (hasLiked) {
-                // UNLIKE ACTION: User clicks a previously liked post -> Remove from array, decrement counters
                 state.likedArticleIds = state.likedArticleIds.filter(id => id !== targetId);
                 state.databaseArticles = state.databaseArticles.map(art => {
                     if (art.id === targetId) {
@@ -280,7 +304,6 @@
                     return art;
                 });
             } else {
-                // LIKE ACTION: Append post string ID tokens to verification ledger array, increment target counters
                 state.likedArticleIds.push(targetId);
                 state.databaseArticles = state.databaseArticles.map(art => {
                     if (art.id === targetId) {
@@ -292,6 +315,75 @@
             
             localStorage.setItem(`anteiku_liked_${emailKey}`, JSON.stringify(state.likedArticleIds));
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
+            render();
+        }
+
+        // TOGGLE LOGIC: EXPLICIT SAVE ARTICLE UTILITY CONTROLLER
+        function handleToggleSaveArticle(e, articleId) {
+            if (e) e.stopPropagation();
+            const targetId = String(articleId);
+            const emailKey = sanitizeEmailKey(state.currentEmail);
+            
+            const isSaved = state.savedArticleIds.includes(targetId);
+            if (isSaved) {
+                state.savedArticleIds = state.savedArticleIds.filter(id => id !== targetId);
+                triggerCustomToast("Article removed from your reading stack. 🔖");
+            } else {
+                state.savedArticleIds.push(targetId);
+                triggerCustomToast("Article saved into your private reading stack! 🔖");
+            }
+            
+            localStorage.setItem(`anteiku_saved_${emailKey}`, JSON.stringify(state.savedArticleIds));
+            render();
+        }
+
+        // TOGGLE LOGIC: EXPLICIT FOLLOW NOTIFICATION SYSTEM TRACKER
+        function handleToggleFollowArticle(e, articleId) {
+            if (e) e.stopPropagation();
+            const targetId = String(articleId);
+            const emailKey = sanitizeEmailKey(state.currentEmail);
+            
+            const isFollowing = state.followedArticleIds.includes(targetId);
+            if (isFollowing) {
+                state.followedArticleIds = state.followedArticleIds.filter(id => id !== targetId);
+                triggerCustomToast("Unfollowed thread notifications. 🔔");
+            } else {
+                state.followedArticleIds.push(targetId);
+                triggerCustomToast("Subscribed to thread updates! 🔔");
+            }
+            
+            localStorage.setItem(`anteiku_followed_${emailKey}`, JSON.stringify(state.followedArticleIds));
+            render();
+        }
+
+        // SUBMISSION HANDLER: APPEND PERSISTENT USER COMMENT OBJECT MAPS
+        function handleAddComment(e, articleId) {
+            if (e) e.preventDefault();
+            const commentInput = document.getElementById('comment-box-field');
+            if (!commentInput) return;
+            const text = commentInput.value.trim();
+            if (!text) return;
+
+            const targetId = String(articleId);
+            const commentStoreKey = `anteiku_comments_${targetId}`;
+            
+            let currentComments = [];
+            const saved = localStorage.getItem(commentStoreKey);
+            if (saved) {
+                try { currentComments = JSON.parse(saved); } catch(ex) { currentComments = []; }
+            }
+
+            const newCommentObj = {
+                id: String(Date.now()),
+                username: `@${state.profile.username || 'guest_writer'}`,
+                name: state.profile.name || 'Guest Writer',
+                text: text,
+                timestamp: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            };
+
+            currentComments.push(newCommentObj);
+            localStorage.setItem(commentStoreKey, JSON.stringify(currentComments));
+            commentInput.value = '';
             render();
         }
 
@@ -320,12 +412,25 @@
                 };
             }
 
-            // Sync user unique liked arrays upon logging into ledger session contexts
             const savedLikes = localStorage.getItem(`anteiku_liked_${emailKey}`);
             if (savedLikes) {
                 try { state.likedArticleIds = JSON.parse(savedLikes); } catch(err) { state.likedArticleIds = []; }
             } else {
                 state.likedArticleIds = [];
+            }
+
+            const savedStore = localStorage.getItem(`anteiku_saved_${emailKey}`);
+            if (savedStore) {
+                try { state.savedArticleIds = JSON.parse(savedStore); } catch(e) { state.savedArticleIds = []; }
+            } else {
+                state.savedArticleIds = [];
+            }
+
+            const followedStore = localStorage.getItem(`anteiku_followed_${emailKey}`);
+            if (followedStore) {
+                try { state.followedArticleIds = JSON.parse(followedStore); } catch(e) { state.followedArticleIds = []; }
+            } else {
+                state.followedArticleIds = [];
             }
 
             state.onboardingNameValue = state.profile.name || '';
@@ -475,11 +580,10 @@
 
             state.databaseArticles.unshift(newPost);
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
-            state.activeFilter = '#All'; // Default back to All Categories
+            state.activeFilter = '#All';
             navigateTo('FEED');
         }
 
-        // MOBILE KEYBOARD FOCUS PROTECTION INTERACTION TRAP
         function handleModalTabTrap(e, containerId) {
             if (e.key !== 'Tab') return;
             const container = document.getElementById(containerId);
@@ -532,7 +636,6 @@
                 return;
             }
 
-            // ONBOARDING SCREEN MODAL WITH FOCUS TRAP RESILIENCE
             if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
                 app.innerHTML = `
                     <div class="min-h-screen flex flex-col justify-center items-center p-4 relative z-50">
@@ -568,7 +671,6 @@
                 return;
             }
 
-            // OVERALL FRAMEWORK LAYOUT PLATFORM BOOT CONTAINER
             app.innerHTML = `
                 <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
                     <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
@@ -585,10 +687,6 @@
                             <img src="${state.profile.avatar || defaultCafeAvatars[0]}" alt="" class="w-6 h-6 rounded object-cover border border-[#453026]" />
                             <span class="text-xs font-mono text-[#fbbf24] max-w-[120px] truncate">${state.profile.name}</span>
                         </div>
-
-                        <button class="p-2 text-[#fbbf24] rounded-lg hover:bg-[#231915] relative">
-                            <i data-lucide="bell" class="w-5 h-5"></i>
-                        </button>
                     </div>
                 </header>
 
@@ -654,11 +752,8 @@
             // --- ROUTE DECK: THE MAIN LOUNGE FEED MODULE ---
             if (state.currentView === 'FEED') {
                 let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) ? [...state.databaseArticles] : [...DEFAULT_LOUNGE_POSTS];
-                
-                // ALL CATEGORIES SELECTION REDUCER INTERACTIVE LOGIC
                 let filtered = state.activeFilter === '#All' ? activeSource : activeSource.filter(a => a.category === state.activeFilter);
 
-                // PROGRAMMATIC EXACT "TRENDING" SORTING MECHANIC DESCENDING ORDER (MOST LIKES -> LEAST LIKES)
                 if (state.isTrendingSorted) {
                     filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
                 }
@@ -668,11 +763,11 @@
                     const currentPostId = art && art.id ? String(art.id) : '';
                     const activeRating = art && typeof art.rating === 'number' ? art.rating : 5;
                     const isArticleLiked = state.likedArticleIds.includes(currentPostId);
+                    const isArticleSaved = state.savedArticleIds.includes(currentPostId);
+                    const isArticleFollowed = state.followedArticleIds.includes(currentPostId);
 
                     for (let index = 1; index <= 5; index++) {
-                        // CLEANED STATE ROUTINE: LIT PURELY BY ACTIVE STORED RATING VALUE ON CLICK ONLY
                         const isLit = (activeRating >= index);
-                        
                         cupsHtml += `
                             <button 
                                 onclick="event.stopPropagation(); handleRateArticle('${currentPostId}', ${index});"
@@ -703,15 +798,33 @@
                                 <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-3">${art.content || art.body}</p>
                             </div>
                             
-                            <div class="flex items-center justify-between pt-3 border-t border-[#231915]">
-                                <button onclick="handleLikeArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
-                                    isArticleLiked 
-                                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
-                                        : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
-                                }">
-                                    <i data-lucide="heart" class="w-3.5 h-3.5 ${isArticleLiked ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i> 
-                                    <span>${art.likes || 0} Likes</span>
-                                </button>
+                            <div class="flex items-center justify-between pt-3 border-t border-[#231915] flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <button onclick="handleLikeArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                                        isArticleLiked 
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                                            : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
+                                    }">
+                                        <i data-lucide="heart" class="w-3.5 h-3.5 ${isArticleLiked ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i> 
+                                        <span>${art.likes || 0}</span>
+                                    </button>
+
+                                    <button onclick="handleToggleSaveArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                                        isArticleSaved 
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                                            : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
+                                    }" title="Save Article File">
+                                        <i data-lucide="bookmark" class="w-3.5 h-3.5 ${isArticleSaved ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i>
+                                    </button>
+
+                                    <button onclick="handleToggleFollowArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                                        isArticleFollowed 
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                                            : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
+                                    }" title="Follow Thread Alerts">
+                                        <i data-lucide="bell" class="w-3.5 h-3.5 ${isArticleFollowed ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i>
+                                    </button>
+                                </div>
                                 
                                 <div class="flex items-center gap-2 bg-[#0c0806] px-3 py-1.5 rounded-lg border border-[#2d201a]" onclick="event.stopPropagation();">
                                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Aroma:</span>
@@ -725,7 +838,6 @@
                 target.innerHTML = `
                     <div class="space-y-5">
                         <div class="border-b border-[#2d201a] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 z-40 relative">
-                            
                             <div class="flex items-center gap-2">
                                 <div class="relative inline-block text-left">
                                     <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#16100d] text-white border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2">
@@ -741,7 +853,6 @@
                                     <span>🔥 Trending</span>
                                 </button>
                             </div>
-
                             <h3 class="text-xs tracking-widest text-[#fbbf24] font-bold uppercase font-serif hidden sm:block">Central Review Desk</h3>
                         </div>
                         <div class="grid grid-cols-1 gap-6">${cardsHtml || '<p class="text-xs text-gray-400 italic p-4 text-center">No matching records found in this stream category.</p>'}</div>
@@ -766,10 +877,11 @@
                 const currentPostId = post && post.id ? String(post.id) : '';
                 const activeRating = post && typeof post.rating === 'number' ? post.rating : 5;
                 const isArticleLiked = state.likedArticleIds.includes(currentPostId);
+                const isArticleSaved = state.savedArticleIds.includes(currentPostId);
+                const isArticleFollowed = state.followedArticleIds.includes(currentPostId);
 
                 for (let index = 1; index <= 5; index++) {
                     const isLit = (activeRating >= index);
-                    
                     cupsHtml += `
                         <button 
                             onclick="handleRateArticle('${currentPostId}', ${index});"
@@ -785,13 +897,31 @@
                     `;
                 }
 
+                // READ AND RENDER PERSISTENT FEEDBACK COMMENTS MAPS BOUND TO ARTICLE ID
+                const commentStoreKey = `anteiku_comments_${currentPostId}`;
+                let articleCommentsList = [];
+                const savedComments = localStorage.getItem(commentStoreKey);
+                if (savedComments) {
+                    try { articleCommentsList = JSON.parse(savedComments); } catch(ec) { articleCommentsList = []; }
+                }
+
+                let commentsHtmlMarkup = articleCommentsList.map(cmt => `
+                    <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl space-y-1 animate-fadeIn">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-[#fbbf24]">${cmt.username}</span>
+                            <span class="text-[10px] text-gray-500 font-mono">${cmt.timestamp || ''}</span>
+                        </div>
+                        <p class="text-sm text-[#f5f0eb] font-light leading-relaxed">${cmt.text}</p>
+                    </div>
+                `).join('');
+
                 target.innerHTML = `
                     <div class="max-w-3xl mx-auto space-y-6">
                         <button onclick="navigateTo('FEED')" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#fbbf24] transition-colors mb-2">
                             <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Lounge Stream
                         </button>
 
-                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8">
+                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8 space-y-6">
                             
                             <div class="space-y-5">
                                 <div class="flex flex-wrap items-center gap-3 border-b border-[#231915] pb-4">
@@ -815,23 +945,65 @@
                                 </div>
                                 
                                 <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-[#231915] gap-4 clear-both">
-                                    <button onclick="handleLikeArticle(null, '${post.id}')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border ${
-                                        isArticleLiked 
-                                            ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
-                                            : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
-                                    }">
-                                        <i data-lucide="heart" class="w-4 h-4 ${isArticleLiked ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
-                                        <span class="text-sm font-mono">${isArticleLiked ? 'Liked Node' : 'Appreciate Node'} (${post.likes || 0} Likes)</span>
-                                    </button>
+                                    <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                                        <button onclick="handleLikeArticle(null, '${post.id}')" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border text-xs font-mono ${
+                                            isArticleLiked 
+                                                ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
+                                                : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
+                                        }">
+                                            <i data-lucide="heart" class="w-4 h-4 ${isArticleLiked ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
+                                            <span>(${post.likes || 0} Likes)</span>
+                                        </button>
 
-                                    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4 bg-[#0c0806] px-4 py-2.5 rounded-xl border border-[#2d201a]">
+                                        <button onclick="handleToggleSaveArticle(null, '${post.id}')" class="px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border text-xs font-mono ${
+                                            isArticleSaved 
+                                                ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
+                                                : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
+                                        }">
+                                            <i data-lucide="bookmark" class="w-4 h-4 ${isArticleSaved ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
+                                            <span>${isArticleSaved ? 'Saved' : 'Save Article'}</span>
+                                        </button>
+
+                                        <button onclick="handleToggleFollowArticle(null, '${post.id}')" class="px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border text-xs font-mono ${
+                                            isArticleFollowed 
+                                                ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
+                                                : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
+                                        }">
+                                            <i data-lucide="bell" class="w-4 h-4 ${isArticleFollowed ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
+                                            <span>${isArticleFollowed ? 'Following Thread' : 'Follow Article'}</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4 bg-[#0c0806] px-4 py-2 rounded-xl border border-[#2d201a]">
                                         <div class="text-left">
                                             <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider block font-mono">Espresso Roast</span>
-                                            <span class="text-xs text-amber-400/90 font-medium">Aroma Assessment</span>
                                         </div>
                                         <div class="flex gap-1">${cupsHtml}</div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
+                            <h3 class="text-base font-bold text-[#fbbf24] flex items-center gap-2 font-serif border-b border-[#231915] pb-3">
+                                <i data-lucide="message-square" class="w-5 h-5 text-[#fbbf24]"></i> Coffee Desk Discussion 
+                                <span class="text-xs font-mono text-gray-400 font-normal">(${articleCommentsList.length} notes logged)</span>
+                            </h3>
+
+                            <form onsubmit="handleAddComment(event, '${post.id}')" class="space-y-3">
+                                <textarea id="comment-box-field" rows="3" required placeholder="Pour your structural perspectives into the thread discussion box..." class="w-full bg-[#0c0806] border border-[#2d201a] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#fbbf24] resize-none leading-relaxed placeholder-gray-500"></textarea>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="px-5 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md flex items-center gap-1.5">
+                                        <i data-lucide="send" class="w-3.5 h-3.5"></i> Post Comment
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="space-y-3 pt-2">
+                                ${commentsHtmlMarkup || `
+                                <div class="p-6 text-center border border-dashed border-[#2d201a] rounded-xl">
+                                    <p class="text-xs text-gray-500 italic">No notes logged on this espresso desk. Be the first to append insight!</p>
+                                </div>`}
                             </div>
                         </div>
                     </div>`;
