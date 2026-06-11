@@ -73,9 +73,7 @@
     <div id="app" class="min-h-screen flex flex-col relative z-10"></div>
 
     <script>
-        // ============================================================================
-        // 📢 GLOBAL CODE-LEVEL STORAGE: ADD ALL NEW POSTS HERE TO MAKE THEM LIVE FOR EVERYONE!
-        // ============================================================================
+        // CORE DATABASE LOUNGE STREAM ENTRIES
         const DEFAULT_LOUNGE_POSTS = [
             { 
                 id: 'lounge-post-gaming', 
@@ -171,25 +169,12 @@
                 bio: 'Writing from the corner booth.'
             };
 
-            // ============================================================================
-            // 🛡️ THE CACHE RECOVERY MATRIX (FIXED BUG)
-            // ============================================================================
             const savedArticles = localStorage.getItem('anteiku_articles');
             let articles = [];
-
             if (savedArticles) {
                 try {
                     const parsed = JSON.parse(savedArticles);
-                    
-                    // Loop over new structural elements hardcoded in arrays and push them back out cleanly
-                    const localIds = parsed.map(p => p.id);
-                    const missingGlobalPosts = DEFAULT_LOUNGE_POSTS.filter(g => !localIds.includes(g.id));
-                    
-                    if (missingGlobalPosts.length > 0) {
-                        articles = [...missingGlobalPosts, ...parsed];
-                    } else {
-                        articles = parsed;
-                    }
+                    articles = (parsed && parsed.length > 0) ? parsed : [...DEFAULT_LOUNGE_POSTS];
                 } catch(e) {
                     articles = [...DEFAULT_LOUNGE_POSTS];
                 }
@@ -226,7 +211,7 @@
                 databaseArticles: articles,
                 likedArticleIds: likedArticles,
                 savedArticleIds: savedArticlesList,
-                followingWriters: followingWritersList,
+                followingWriters: followingWritersList, // Array of followed writer handles e.g., ["@touka_rabbit"]
                 
                 selectedArticleId: null,
                 activeFilter: '#All',
@@ -235,14 +220,18 @@
                 writerSelectedCategory: 'Gaming',
                 customToast: { show: false, message: '' },
                 
+                // ACCOUNT ACTIVITIES SUB-SECTION ROUTING SWITCH
+                // Options: 'SAVED', 'LIKED', 'RATED', 'FOLLOWING'
                 activeAccountActivityTab: 'SAVED',
+
                 isEditProfileModalOpen: false,
-                isFollowersModalOpen: false,
+                isFollowersModalOpen: false, // INTERACTIVE FOLLOWERS MODAL SUB-PAGE STATE
                 editProfileNameValue: profile.name || '',
                 editProfileUsernameValue: profile.username || '',
                 editProfileBioValue: profile.bio || '',
                 editProfileAvatarValue: profile.avatar || defaultCafeAvatars[0],
                 editCustomAvatarSelected: false,
+
                 onboardingNameValue: profile.name || '',
                 onboardingUsernameValue: profile.username || ''
             };
@@ -250,6 +239,7 @@
 
         let state = bootstrapCoreEngine();
 
+        // THE BARISTA APPRECIATION POP-UP TOAST METHOD
         function triggerBaristaAppreciation() {
             state.customToast = { show: true, message: "The Barista appreciates your rating! ☕✨" };
             render();
@@ -291,6 +281,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // ONE LIKE PER USER SYSTEM CAPABILITY
         function handleLikeArticle(e, articleId) {
             if (e) e.stopPropagation(); 
             const targetId = String(articleId);
@@ -321,6 +312,7 @@
             render();
         }
 
+        // EXPLICIT SAVE ARTICLE UTILITY CONTROLLER
         function handleToggleSaveArticle(e, articleId) {
             if (e) e.stopPropagation();
             const targetId = String(articleId);
@@ -339,6 +331,7 @@
             render();
         }
 
+        // FOLLOW WRITER ENGINE PREFERENCES ARRAY BINDINGS
         function handleToggleFollowWriter(e, writerHandle) {
             if (e) e.stopPropagation();
             if (!writerHandle) return;
@@ -359,6 +352,40 @@
             render();
         }
 
+        // UTILITY DYNAMIC EXTRACTION: FETCH CURRENT FOLLOWER HANDLES FOR A GIVEN ACCOUNT PROFILE
+        function getWriterFollowersList(writerHandle) {
+            if (!writerHandle) return [];
+            const targetHandle = writerHandle.trim().toLowerCase();
+            let uniqueFollowerHandles = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_followingWriters_')) {
+                    try {
+                        const parsedList = JSON.parse(localStorage.getItem(storageKey));
+                        if (Array.isArray(parsedList)) {
+                            const isFollowing = parsedList.some(h => h.trim().toLowerCase() === targetHandle);
+                            if (isFollowing) {
+                                // Extract matching profile handle info associated with this storage key
+                                const accountSuffix = storageKey.replace('anteiku_followingWriters_', '');
+                                const linkedProfileString = localStorage.getItem(`anteiku_profile_${accountSuffix}`);
+                                if (linkedProfileString) {
+                                    const profileObj = JSON.parse(linkedProfileString);
+                                    if (profileObj && profileObj.username) {
+                                        uniqueFollowerHandles.push(`@${profileObj.username}`);
+                                    }
+                                } else {
+                                    uniqueFollowerHandles.push(`Writer_${accountSuffix.substring(0, 5)}`);
+                                }
+                            }
+                        }
+                    } catch (ex) {}
+                }
+            }
+            return uniqueFollowerHandles;
+        }
+
+        // SUBMISSION HANDLER: APPEND PERSISTENT USER COMMENT OBJECT MAPS
         function handleAddComment(e, articleId) {
             if (e) e.preventDefault();
             const commentInput = document.getElementById('comment-box-field');
@@ -413,7 +440,27 @@
                 };
             }
 
-            // Sync State Blocks
+            const savedLikes = localStorage.getItem(`anteiku_liked_${emailKey}`);
+            if (savedLikes) {
+                try { state.likedArticleIds = JSON.parse(savedLikes); } catch(err) { state.likedArticleIds = []; }
+            } else {
+                state.likedArticleIds = [];
+            }
+
+            const savedStore = localStorage.getItem(`anteiku_saved_${emailKey}`);
+            if (savedStore) {
+                try { state.savedArticleIds = JSON.parse(savedStore); } catch(e) { state.savedArticleIds = []; }
+            } else {
+                state.savedArticleIds = [];
+            }
+
+            const followWritersStore = localStorage.getItem(`anteiku_followingWriters_${emailKey}`);
+            if (followWritersStore) {
+                try { state.followingWriters = JSON.parse(followWritersStore); } catch(e) { state.followingWriters = []; }
+            } else {
+                state.followingWriters = [];
+            }
+
             state.onboardingNameValue = state.profile.name || '';
             state.onboardingUsernameValue = state.profile.username || '';
             syncProfileFormValues();
@@ -435,6 +482,45 @@
             state.editCustomAvatarSelected = false;
         }
 
+        function liveCheckUsernameUniqueness(inputEl) {
+            const rawVal = inputEl.value;
+            const cleanedInput = rawVal.trim().replace('@', '').toLowerCase();
+            state.onboardingUsernameValue = cleanedInput;
+
+            const errorBox = document.getElementById('username-error-container');
+            const submitBtn = document.getElementById('onboarding-submit-btn');
+
+            if (!cleanedInput) {
+                if(errorBox) errorBox.classList.add('hidden');
+                return;
+            }
+
+            let matchesExisting = false;
+            const currentEmailKey = sanitizeEmailKey(state.currentEmail);
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_profile_')) {
+                    if (storageKey === `anteiku_profile_${currentEmailKey}`) continue;
+                    try {
+                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
+                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === cleanedInput) {
+                            matchesExisting = true;
+                            break;
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            if (matchesExisting) {
+                if(errorBox) errorBox.classList.remove('hidden');
+                if(submitBtn) submitBtn.disabled = true;
+            } else {
+                if(errorBox) errorBox.classList.add('hidden');
+                if(submitBtn) submitBtn.disabled = false;
+            }
+        }
+
         function handleOnboardingSubmission(e) {
             if (e) e.preventDefault();
             const chosenName = document.getElementById('onboard-name').value.trim();
@@ -445,6 +531,8 @@
             const emailKey = sanitizeEmailKey(state.currentEmail);
             state.profile.name = chosenName;
             state.profile.username = chosenUsername;
+            state.profile.avatar = defaultCafeAvatars[0];
+            state.profile.bio = 'Writing from the corner booth.';
             
             localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
             localStorage.setItem(`anteiku_onboarded_${emailKey}`, 'true');
@@ -452,6 +540,51 @@
             state.showOnboardingModal = false;
             syncProfileFormValues();
             navigateTo('FEED');
+        }
+
+        function handleModalProfileUpdate(e) {
+            if (e) e.preventDefault();
+            const emailKey = sanitizeEmailKey(state.currentEmail);
+            const targetUsername = state.editProfileUsernameValue.trim().replace('@', '').toLowerCase();
+
+            if (!state.editProfileNameValue.trim() || !targetUsername) return;
+
+            let structuralCollision = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const storageKey = localStorage.key(i);
+                if (storageKey.startsWith('anteiku_profile_')) {
+                    if (storageKey === `anteiku_profile_${emailKey}`) continue;
+                    try {
+                        const parsedUser = JSON.parse(localStorage.getItem(storageKey));
+                        if (parsedUser && parsedUser.username && parsedUser.username.toLowerCase() === targetUsername) {
+                            structuralCollision = true;
+                            break;
+                        }
+                    } catch (ex) {}
+                }
+            }
+
+            if (structuralCollision) return;
+
+            state.profile.name = state.editProfileNameValue.trim();
+            state.profile.username = targetUsername;
+            state.profile.bio = state.editProfileBioValue.trim();
+            state.profile.avatar = state.editProfileAvatarValue;
+
+            localStorage.setItem(`anteiku_profile_${emailKey}`, JSON.stringify(state.profile));
+            state.isEditProfileModalOpen = false;
+            render();
+        }
+
+        function handleRateArticle(articleId, score) {
+            state.databaseArticles = state.databaseArticles.map(art => {
+                if (art.id === String(articleId)) {
+                    return { ...art, rating: parseInt(score, 10) };
+                }
+                return art;
+            });
+            localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
+            triggerBaristaAppreciation();
         }
 
         function handlePublishArticle(e) {
@@ -469,7 +602,7 @@
                 author: state.profile.name,
                 handle: `@${state.profile.username}`,
                 category: `#${state.writerSelectedCategory}`,
-                image: imgInput || '',
+                image: imgInput || '', // OPTIONAL: COLLAPSES Layout space perfectly
                 likes: 0,
                 rating: 5
             };
@@ -478,6 +611,26 @@
             localStorage.setItem('anteiku_articles', JSON.stringify(state.databaseArticles));
             state.activeFilter = '#All';
             navigateTo('FEED');
+        }
+
+        function handleModalTabTrap(e, containerId) {
+            if (e.key !== 'Tab') return;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const focusables = container.querySelectorAll('input, button, textarea, select');
+            if (focusables.length === 0) return;
+            
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            
+            if (e.shiftKey && document.activeElement === first) {
+                last.focus();
+                e.preventDefault();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                first.focus();
+                e.preventDefault();
+            }
         }
 
         // --- PLATFORM COMPILE ENGINE ---
@@ -504,104 +657,580 @@
                                     <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Security Token</label>
                                     <input type="password" required placeholder="••••••••••••" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
                                 </div>
+                                <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] rounded-lg font-bold text-xs uppercase tracking-widest transition-all">Validate Access Token</button>
+                            </form>
+                        </div>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            if (state.currentView === 'ONBOARDING' || state.showOnboardingModal) {
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative z-50">
+                        <div id="onboard-modal-container" onkeydown="handleModalTabTrap(event, 'onboard-modal-container')" class="max-w-md w-full space-y-5 z-10 animate-fadeIn bg-[#16100d] border border-[#fbbf24]/60 p-8 rounded-2xl shadow-2xl">
+                            <div class="text-center space-y-1">
+                                <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24]">Welcome to the Café</h2>
+                                <p class="text-xs text-gray-300 font-light">Set up your initial table identity profiles.</p>
+                            </div>
+                            <form onsubmit="handleOnboardingSubmission(event)" class="space-y-4 pt-1">
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1">Enter your Name</label>
+                                    <input type="text" id="onboard-name" required value="${state.onboardingNameValue}" oninput="state.onboardingNameValue=this.value;" placeholder="e.g. Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
+                                </div>
+                                <div>
+                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1">Choose a Username (handle)</label>
+                                    <div class="relative flex items-center">
+                                        <span class="absolute left-4 text-sm font-bold font-mono text-[#fbbf24]">@</span>
+                                        <input type="text" id="onboard-username" required value="${state.onboardingUsernameValue}" oninput="liveCheckUsernameUniqueness(this)" placeholder="books_and_brews" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg pl-9 pr-4 py-2 text-sm text-[#f5f0eb] font-mono focus:outline-none transition-colors" />
+                                    </div>
+                                    <div id="username-error-container" class="mt-1.5 text-xs text-amber-400 font-medium flex items-center gap-1 hidden">
+                                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i><span>Handle occupied. Please select an alternative route.</span>
+                                    </div>
+                                </div>
                                 <div class="pt-2">
-                                    <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#e0aa1f] text-[#0c0806] font-bold text-sm rounded-lg transition duration-200 shadow-md uppercase tracking-wider">
-                                        Enter the Lounge
+                                    <button type="submit" id="onboarding-submit-btn" class="w-full py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 rounded-lg bg-[#fbbf24] text-[#0c0806] hover:bg-[#d9a21b]">Let's Go <i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>`;
+                
+                setTimeout(() => { document.getElementById('onboard-name')?.focus(); }, 50);
+                lucide.createIcons();
+                return;
+            }
+
+            app.innerHTML = `
+                <header class="sticky top-0 z-50 bg-[#16100d]/95 backdrop-blur-md border-b border-[#2d201a] px-6 py-3 flex justify-between items-center shadow-lg">
+                    <div onclick="navigateTo('FEED')" class="flex items-center gap-3 cursor-pointer group">
+                        <i data-lucide="coffee" class="w-5 h-5 text-[#fbbf24] group-hover:rotate-12 transition-transform"></i>
+                        <span class="text-lg font-bold tracking-wider uppercase text-[#fbbf24]">Anteiku Hub</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 relative">
+                        <button onclick="state.isEditProfileModalOpen=true; syncProfileFormValues(); render();" class="px-3 py-1.5 text-xs font-bold bg-[#fbbf24] text-[#0c0806] hover:bg-[#d9a21b] rounded-lg transition-all flex items-center gap-1.5 shadow-md">
+                            <i data-lucide="user-cog" class="w-3.5 h-3.5"></i> Edit Profile
+                        </button>
+
+                        <div class="flex items-center gap-2.5 px-3 py-1 rounded-lg bg-[#231915] border border-[#2d201a]">
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" alt="" class="w-6 h-6 rounded object-cover border border-[#453026]" />
+                            <span class="text-xs font-mono text-[#fbbf24] max-w-[120px] truncate">${state.profile.name}</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="flex flex-1 flex-col md:flex-row relative z-10">
+                    <aside class="w-full md:w-64 bg-[#16100d]/90 backdrop-blur-sm border-b md:border-b-0 md:border-r border-[#2d201a] p-6 flex flex-col shrink-0 shadow-2xl">
+                        <div class="space-y-4">
+                            <p class="text-[10px] uppercase tracking-widest text-[#fbbf24] font-bold px-2">Menu Directives</p>
+                            <nav class="space-y-1">
+                                <button onclick="navigateTo('FEED')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${(state.currentView==='FEED'||state.currentView==='ARTICLE_VIEW') ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="compass" class="w-4 h-4 text-[#fbbf24]"></i> Main Lounge</button>
+                                <button onclick="navigateTo('WRITE')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='WRITE' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="pen-tool" class="w-4 h-4 text-[#fbbf24]"></i> Write Article</button>
+                                <button onclick="navigateTo('ACCOUNT')" class="w-full flex items-center gap-4 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${state.currentView==='ACCOUNT' ? 'bg-[#2d201a] text-[#fbbf24] border-l-2 border-[#fbbf24]' : 'text-white hover:bg-[#231915]'}""><i data-lucide="settings" class="w-4 h-4 text-[#fbbf24]"></i> Account Management</button>
+                            </nav>
+                        </div>
+                    </aside>
+
+                    <main class="flex-1 p-5 md:p-8 max-w-4xl w-full mx-auto overflow-hidden animate-fadeIn" id="view-target"></main>
+                </div>
+
+                ${state.isEditProfileModalOpen ? `
+                <div class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[200] animate-fadeIn">
+                    <div id="edit-profile-modal-container" onkeydown="handleModalTabTrap(event, 'edit-profile-modal-container')" class="bg-[#16100d] border border-[#fbbf24]/60 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
+                        <h3 class="text-lg font-bold text-[#fbbf24] flex items-center gap-2 font-serif"><i data-lucide="user-cog" class="w-5 h-5"></i> Profile Configuration</h3>
+                        <form onsubmit="handleModalProfileUpdate(event)" class="space-y-4">
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wider text-white block mb-1 font-semibold">Display Name</label>
+                                <input type="text" value="${state.editProfileNameValue}" oninput="state.editProfileNameValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#fbbf24]" required />
+                            </div>
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wider text-white block mb-1 font-semibold">Username Handle</label>
+                                <input type="text" value="${state.editProfileUsernameValue}" oninput="state.editProfileUsernameValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#fbbf24]" required />
+                            </div>
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wider text-white block mb-1 font-semibold">Workspace Bio</label>
+                                <input type="text" value="${state.editProfileBioValue}" oninput="state.editProfileBioValue=this.value;" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#fbbf24]" />
+                            </div>
+                            <div class="bg-[#0c0806] p-3.5 rounded-xl border border-[#2d201a] space-y-2.5">
+                                <label class="text-xs uppercase tracking-wider text-[#fbbf24] font-bold block">Configure Avatar Photo</label>
+                                <div class="flex items-center gap-3">
+                                    <img src="${state.editProfileAvatarValue}" class="h-12 w-12 rounded-xl object-cover border border-[#fbbf24]/50 shrink-0 bg-[#16100d]" alt="" />
+                                    <div class="flex gap-2">${defaultCafeAvatars.map(url => `
+                                        <div onclick="state.editCustomAvatarSelected=false; state.editProfileAvatarValue='${url}'; render();" class="h-9 w-9 cursor-pointer rounded-lg overflow-hidden border-2 ${state.editProfileAvatarValue===url?'border-[#fbbf24]':'border-transparent opacity-60'}"><img src="${url}" class="w-full h-full object-cover" /></div>`).join('')}</div>
+                                </div>
+                                <input type="url" placeholder="Or map external custom image URL direct link..." value="${state.editCustomAvatarSelected ? state.editProfileAvatarValue : ''}" oninput="state.editCustomAvatarSelected=true; state.editProfileAvatarValue=this.value; render();" class="w-full bg-[#16100d] border border-[#453026] rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#fbbf24]" />
+                            </div>
+                            <div class="flex justify-end gap-2 pt-2">
+                                <button type="button" onclick="state.isEditProfileModalOpen=false; render();" class="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white transition-colors">Dismiss</button>
+                                <button type="submit" class="px-5 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-md transition-all shadow-md">Apply Alterations</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>` : ''}
+
+                ${state.isFollowersModalOpen ? `
+                <div class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-[200] animate-fadeIn">
+                    <div id="followers-modal-container" onkeydown="handleModalTabTrap(event, 'followers-modal-container')" class="bg-[#16100d] border border-[#fbbf24] p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl relative">
+                        <div class="flex justify-between items-center border-b border-[#2d201a] pb-2">
+                            <h3 class="text-base font-bold text-[#fbbf24] flex items-center gap-2 font-serif">
+                                <i data-lucide="users" class="w-5 h-5 text-[#fbbf24]"></i> Profile Followers
+                            </h3>
+                            <button onclick="state.isFollowersModalOpen=false; render();" class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+                            ${getWriterFollowersList(`@${state.profile.username}`).map(fHandle => `
+                                <div class="p-3 bg-[#0c0806] border border-[#2d201a] rounded-xl flex items-center gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-[#fbbf24] filter drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]"></div>
+                                    <span class="text-sm font-mono font-medium text-[#f5f0eb]">${fHandle}</span>
+                                </div>
+                            `).join('') || '<p class="text-xs text-gray-500 italic py-4 text-center">No other accounts are following your profile handles currently.</p>'}
+                        </div>
+                        <div class="flex justify-end pt-1">
+                            <button onclick="state.isFollowersModalOpen=false; render();" class="px-4 py-2 bg-[#231915] border border-[#453026] text-white hover:bg-[#2d201a] text-xs font-bold uppercase tracking-wider rounded-lg transition-colors">Close View</button>
+                        </div>
+                    </div>
+                </div>` : ''}
+
+                ${state.customToast.show ? `
+                <div class="fixed bottom-6 right-6 z-[250] max-w-sm w-full bg-[#1c1410] border-2 border-[#fbbf24] p-4 rounded-xl shadow-2xl shadow-black/80 flex items-center gap-3 animate-fadeIn">
+                    <div class="bg-[#fbbf24] text-[#0c0806] p-1.5 rounded-lg shrink-0">
+                        <i data-lucide="coffee" class="w-4 h-4 fill-current"></i>
+                    </div>
+                    <p class="text-xs font-bold tracking-wide text-[#f5f0eb]">${state.customToast.message}</p>
+                </div>` : ''}`;
+
+            const target = document.getElementById('view-target');
+
+            // --- ROUTE DECK: THE MAIN LOUNGE FEED MODULE ---
+            if (state.currentView === 'FEED') {
+                let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) ? [...state.databaseArticles] : [...DEFAULT_LOUNGE_POSTS];
+                let filtered = state.activeFilter === '#All' ? activeSource : activeSource.filter(a => a.category === state.activeFilter);
+
+                if (state.isTrendingSorted) {
+                    filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+                }
+
+                let cardsHtml = filtered.map(art => {
+                    let cupsHtml = '';
+                    const currentPostId = art && art.id ? String(art.id) : '';
+                    const activeRating = art && typeof art.rating === 'number' ? art.rating : 5;
+                    const isArticleLiked = state.likedArticleIds.includes(currentPostId);
+                    const isArticleSaved = state.savedArticleIds.includes(currentPostId);
+                    
+                    const postWriterHandle = art.handle || '@writer';
+                    const isFollowingThisWriter = state.followingWriters.includes(postWriterHandle);
+
+                    for (let index = 1; index <= 5; index++) {
+                        const isLit = (activeRating >= index);
+                        cupsHtml += `
+                            <button 
+                                onclick="event.stopPropagation(); handleRateArticle('${currentPostId}', ${index});"
+                                class="p-0.5 transition-transform active:scale-95 duration-100 focus:outline-none"
+                                aria-label="Rate ${index} Cups"
+                            >
+                                <i data-lucide="coffee" class="w-5 h-5 transition-colors duration-150 ${
+                                    isLit 
+                                        ? 'text-[#fbbf24] fill-[#fbbf24] filter drop-shadow-[0_0_4px_rgba(251,191,36,0.6)]' 
+                                        : 'text-[#453026] fill-transparent'
+                                }"></i>
+                            </button>
+                        `;
+                    }
+
+                    return `
+                    <div onclick="viewArticleNodeDetails('${art.id}')" class="bg-[#16100d] border border-[#2d201a] rounded-xl overflow-hidden hover:border-[#fbbf24]/50 transition-all duration-300 shadow-md flex flex-col cursor-pointer group p-6">
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <span class="text-[10px] font-mono font-bold uppercase text-[#0c0806] bg-[#fbbf24] px-2 py-0.5 rounded">${art.category}</span>
+                                
+                                <div class="flex items-center gap-2 text-xs text-gray-200 font-medium">
+                                    <span>By <span class="text-[#fbbf24] font-semibold">${art.author}</span> <span class="text-gray-500 font-mono text-[11px]">${postWriterHandle}</span></span>
+                                    
+                                    <button onclick="handleToggleFollowWriter(event, '${postWriterHandle}')" class="ml-1.5 px-2 py-0.5 text-[10px] uppercase tracking-wider rounded font-mono font-bold transition-all border ${
+                                        isFollowingThisWriter 
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' 
+                                            : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-400 hover:text-white'
+                                    }">
+                                        ${isFollowingThisWriter ? 'Following' : '+ Follow'}
                                     </button>
                                 </div>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            } else if (state.currentView === 'ONBOARDING') {
-                app.innerHTML = `
-                    <div class="min-h-screen flex flex-col justify-center items-center p-4 relative">
-                        <div class="max-w-md w-full space-y-6 z-10 animate-fadeIn bg-[#16100d] border border-[#3c2a22] p-8 rounded-2xl shadow-2xl">
-                            <div class="text-center space-y-2">
-                                <h2 class="text-2xl font-bold text-[#fbbf24]">Setup Your Profile</h2>
-                                <p class="text-xs text-slate-400">Claim your booth name in the cafe ledger before reading.</p>
                             </div>
-                            <form onsubmit="handleOnboardingSubmission(event)" class="space-y-4 pt-2">
-                                <div>
-                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Display Name</label>
-                                    <input type="text" id="onboard-name" required placeholder="Ken Kaneki" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                </div>
-                                <div>
-                                    <label class="text-xs uppercase tracking-wider text-white font-bold block mb-1.5">Unique Handle</label>
-                                    <input type="text" id="onboard-username" required placeholder="eyepatch" oninput="state.onboardingUsernameValue = this.value" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2.5 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                </div>
-                                <button type="submit" class="w-full py-3 bg-[#fbbf24] hover:bg-[#e0aa1f] text-[#0c0806] font-bold text-sm rounded-lg transition duration-200 shadow-md uppercase tracking-wider">
-                                    Open Terminal
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // FALLBACK GLOBAL ROUTER CONTAINER TEMPLATE FOR TIMELINE FEED CONTENT
-                app.innerHTML = `
-                    <header class="bg-[#16100d] border-b border-[#3c2a22] py-4 px-6 sticky top-0 z-30 shadow-md">
-                        <div class="max-w-6xl mx-auto flex justify-between items-center">
-                            <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('FEED')">
-                                <i data-lucide="coffee" class="text-[#fbbf24] w-6 h-6"></i>
-                                <span class="cafe-header text-xl font-bold tracking-wider">Anteiku Hub</span>
+
+                            <h2 class="text-xl font-bold text-[#fbbf24] tracking-wide group-hover:text-amber-400 transition-colors">${art.title}</h2>
+                            
+                            <div class="pt-1">
+                                <p class="text-sm text-[#f5f0eb] font-light leading-relaxed line-clamp-3">${art.content}</p>
                             </div>
-                            <div class="flex items-center gap-4">
-                                <button onclick="localStorage.clear(); window.location.reload();" class="text-xs text-slate-400 hover:text-white transition">Exit Terminal</button>
-                                <div class="w-8 h-8 rounded-full border border-[#fbbf24] overflow-hidden">
-                                    <img src="${state.profile.avatar}" class="w-10 h-10 object-cover" />
+                            
+                            <div class="flex items-center justify-between pt-3 border-t border-[#231915] flex-wrap gap-2" onclick="event.stopPropagation();">
+                                <div class="flex items-center gap-2">
+                                    <button onclick="handleLikeArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                                        isArticleLiked 
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                                            : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
+                                    }">
+                                        <i data-lucide="heart" class="w-3.5 h-3.5 ${isArticleLiked ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i> 
+                                        <span>${art.likes || 0}</span>
+                                    </button>
+
+                                    <button onclick="handleToggleSaveArticle(event, '${art.id}')" class="text-[11px] font-mono flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                                        isArticleSaved 
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                                            : 'bg-[#231915] text-gray-400 border-[#3c2a22] hover:border-amber-500/50 hover:text-white'
+                                    }" title="Save Article File">
+                                        <i data-lucide="bookmark" class="w-3.5 h-3.5 ${isArticleSaved ? 'text-amber-400 fill-amber-400' : 'text-gray-400'}"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center gap-2 bg-[#0c0806] px-3 py-1.5 rounded-lg border border-[#2d201a]">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-mono">Aroma:</span>
+                                    <div class="flex gap-0.5">${cupsHtml}</div>
                                 </div>
                             </div>
                         </div>
-                    </header>
-                    <main class="max-w-4xl mx-auto p-6 flex-1 w-full space-y-6">
-                        <div class="bg-[#16100d] border border-[#3c2a22] p-6 rounded-xl space-y-4 shadow-xl">
-                            <h3 class="text-lg font-bold text-[#fbbf24] uppercase tracking-wide">Write a New Entry</h3>
-                            <form onsubmit="handlePublishArticle(event)" class="space-y-4">
-                                <input type="text" id="w-title" required placeholder="Entry Title" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                <textarea id="w-body" required rows="3" placeholder="Pour your deep focus items out on paper..." class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]"></textarea>
-                                <input type="url" id="w-feature-image" placeholder="Feature Image URL (Optional)" class="w-full bg-[#0c0806] border border-[#453026] rounded-lg px-4 py-2 text-sm text-[#f5f0eb] focus:outline-none focus:border-[#fbbf24]" />
-                                <div class="flex justify-between items-center">
-                                    <select onchange="state.writerSelectedCategory = this.value" class="bg-[#0c0806] border border-[#453026] text-sm text-[#f5f0eb] rounded-lg p-2 focus:outline-none">
-                                        <option value="Gaming">Gaming</option>
-                                        <option value="Sports">Sports</option>
-                                        <option value="Education">Education</option>
-                                        <option value="News">News</option>
-                                        <option value="GeneralKnowledge">General Knowledge</option>
-                                    </select>
-                                    <button type="submit" class="bg-[#fbbf24] text-[#0c0806] font-bold px-6 py-2 rounded-lg text-xs uppercase tracking-wider hover:bg-[#e0aa1f] transition">Publish Post</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="space-y-4">
-                            ${state.databaseArticles.map(post => `
-                                <div class="bg-[#16100d] border border-[#3c2a22] rounded-xl overflow-hidden shadow-lg p-6 space-y-3 animate-fadeIn">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <span class="text-xs font-bold text-[#b236ff] uppercase tracking-wider">${post.category}</span>
-                                            <h2 class="text-xl font-bold text-[#fbbf24] mt-1">${post.title}</h2>
-                                        </div>
+                    </div>`;
+                }).join('');
+
+                target.innerHTML = `
+                    <div class="space-y-5">
+                        <div class="border-b border-[#2d201a] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 z-40 relative">
+                            <div class="flex items-center gap-2">
+                                <div class="relative inline-block text-left">
+                                    <button onclick="state.isCategoryDropdownOpen=!state.isCategoryDropdownOpen; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#16100d] text-white border border-[#2d201a] hover:border-[#fbbf24] flex items-center gap-2">
+                                        <span>Filter Stream: <span class="text-[#fbbf24] font-mono">${state.activeFilter}</span></span>
+                                        <i data-lucide="chevron-down" class="w-3 h-3 text-[#fbbf24]"></i>
+                                    </button>
+                                    <div class="absolute left-0 mt-1.5 w-52 bg-[#16100d] border border-[#2d201a] rounded-xl shadow-2xl overflow-hidden transition-all duration-200 ${state.isCategoryDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}"">
+                                        ${categories.map(c => `<button onclick="state.activeFilter='${c.id}'; state.isCategoryDropdownOpen=false; render();" class="w-full text-left px-4 py-2 text-xs font-mono text-white hover:bg-[#231915] hover:text-[#fbbf24] transition-colors">${c.tag}</button>`).join('')}
                                     </div>
-                                    ${post.image ? `<img src="${post.image}" class="w-full h-48 object-cover rounded-lg border border-[#3c2a22] my-2" />` : ''}
-                                    <p class="text-sm text-slate-300 line-clamp-3 leading-relaxed">${post.content}</p>
-                                    <div class="flex justify-between items-center pt-3 border-t border-[#231915] text-xs text-slate-400">
-                                        <div>By <span class="text-[#fbbf24] font-medium">${post.author}</span> <span class="text-slate-500">${post.handle}</span></div>
-                                        <button onclick="handleLikeArticle(event, '${post.id}')" class="flex items-center gap-1.5 text-slate-400 hover:text-[#fbbf24] transition">
-                                            <i data-lucide="heart" class="w-4 h-4"></i> <span>${post.likes || 0}</span>
+                                </div>
+
+                                <button onclick="state.isTrendingSorted=!state.isTrendingSorted; render();" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm ${state.isTrendingSorted ? 'bg-amber-500 border-amber-500 text-[#0c0806] font-extrabold' : 'bg-[#16100d] border-[#2d201a] text-white hover:border-[#fbbf24]'}">
+                                    <span>🔥 Trending</span>
+                                </button>
+                            </div>
+                            <h3 class="text-xs tracking-widest text-[#fbbf24] font-bold uppercase font-serif hidden sm:block">Central Review Desk</h3>
+                        </div>
+                        <div class="grid grid-cols-1 gap-6">${cardsHtml || '<p class="text-xs text-gray-400 italic p-4 text-center">No matching records found in this stream category.</p>'}</div>
+                    </div>`;
+            }
+
+            // --- ROUTE DECK: SINGLE EXPANDED NODE DETAILED VIEW ---
+            else if (state.currentView === 'ARTICLE_VIEW') {
+                let activeSource = (state.databaseArticles && state.databaseArticles.length > 0) ? state.databaseArticles : DEFAULT_LOUNGE_POSTS;
+                let post = activeSource.find(a => String(a.id) === state.selectedArticleId);
+
+                if (!post) {
+                    target.innerHTML = `
+                        <div class="text-center py-12 space-y-4">
+                            <p class="text-sm text-gray-400 italic">Article node trace has been fragmented or dropped.</p>
+                            <button onclick="navigateTo('FEED')" class="px-4 py-2 bg-[#fbbf24] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg">Return to Lounge</button>
+                        </div>`;
+                    return;
+                }
+
+                let cupsHtml = '';
+                const currentPostId = post && post.id ? String(post.id) : '';
+                const activeRating = post && typeof post.rating === 'number' ? post.rating : 5;
+                const isArticleLiked = state.likedArticleIds.includes(currentPostId);
+                const isArticleSaved = state.savedArticleIds.includes(currentPostId);
+                
+                const postWriterHandle = post.handle || '@writer';
+                const isFollowingThisWriter = state.followingWriters.includes(postWriterHandle);
+
+                for (let index = 1; index <= 5; index++) {
+                    const isLit = (activeRating >= index);
+                    cupsHtml += `
+                        <button 
+                            onclick="handleRateArticle('${currentPostId}', ${index});"
+                            class="p-1 transition-transform active:scale-95 duration-100 focus:outline-none"
+                            aria-label="Rate ${index} Cups"
+                        >
+                            <i data-lucide="coffee" class="w-6 h-6 transition-colors duration-150 ${
+                                isLit 
+                                    ? 'text-[#fbbf24] fill-[#fbbf24] filter drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]' 
+                                    : 'text-[#453026] fill-transparent'
+                            }"></i>
+                        </button>
+                    `;
+                }
+
+                const commentStoreKey = `anteiku_comments_${currentPostId}`;
+                let articleCommentsList = [];
+                const savedComments = localStorage.getItem(commentStoreKey);
+                if (savedComments) {
+                    try { articleCommentsList = JSON.parse(savedComments); } catch(ec) { articleCommentsList = []; }
+                }
+
+                let commentsHtmlMarkup = articleCommentsList.map(cmt => `
+                    <div class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl space-y-1 animate-fadeIn">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-mono font-bold text-[#fbbf24]">${cmt.username}</span>
+                            <span class="text-[10px] text-gray-500 font-mono">${cmt.timestamp || ''}</span>
+                        </div>
+                        <p class="text-sm text-[#f5f0eb] font-light leading-relaxed">${cmt.text}</p>
+                    </div>
+                `).join('');
+
+                target.innerHTML = `
+                    <div class="max-w-3xl mx-auto space-y-6">
+                        <button onclick="navigateTo('FEED')" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#fbbf24] transition-colors mb-2">
+                            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Lounge Stream
+                        </button>
+
+                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl overflow-hidden shadow-2xl p-6 md:p-8 space-y-6">
+                            
+                            <div class="space-y-5">
+                                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#231915] pb-4">
+                                    <span class="text-xs font-mono font-bold uppercase text-[#0c0806] bg-[#fbbf24] px-2.5 py-0.5 rounded">${post.category}</span>
+                                    
+                                    <div class="flex items-center gap-3 text-xs text-gray-300">
+                                        <span>Curated by <span class="text-[#fbbf24] font-bold font-serif text-sm">${post.author}</span>
+                                        <span class="text-gray-500 font-mono text-xs block sm:inline sm:ml-1">(${postWriterHandle})</span></span>
+                                        
+                                        <button onclick="handleToggleFollowWriter(null, '${postWriterHandle}')" class="px-3 py-1 text-xs font-mono font-bold uppercase tracking-wide rounded border transition-all ${
+                                            isFollowingThisWriter 
+                                                ? 'bg-amber-500 text-[#0c0806] border-amber-500 shadow-md' 
+                                                : 'bg-[#231915] border-[#453026] text-amber-400 hover:border-amber-400'
+                                        }">
+                                            ${isFollowingThisWriter ? 'Following Writer' : 'Follow Writer 👤'}
                                         </button>
                                     </div>
                                 </div>
-                            `).join('')}
+
+                                <h1 class="text-2xl md:text-4xl font-extrabold tracking-wide text-[#fbbf24] font-serif leading-tight">${post.title}</h1>
+                                
+                                <div class="flex flex-col gap-5 pt-2">
+                                    ${(post.image && post.image.trim() !== "") ? `
+                                    <div class="w-full sm:max-w-md rounded-xl overflow-hidden border border-[#2d201a] bg-[#0c0806] mx-auto sm:float-left sm:mr-6 sm:mb-4 shadow-lg">
+                                        <img src="${post.image.trim()}" class="w-full object-cover max-h-[300px]" alt="Article Illustration Graphic" />
+                                    </div>` : ''}
+
+                                    <p class="text-base text-[#f5f0eb] font-light leading-relaxed whitespace-pre-wrap">${post.content}</p>
+                                </div>
+                                
+                                <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-[#231915] gap-4 clear-both">
+                                    <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                                        <button onclick="handleLikeArticle(null, '${post.id}')" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border text-xs font-mono ${
+                                            isArticleLiked 
+                                                ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
+                                                : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
+                                        }">
+                                            <i data-lucide="heart" class="w-4 h-4 ${isArticleLiked ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
+                                            <span>(${post.likes || 0} Likes)</span>
+                                        </button>
+
+                                        <button onclick="handleToggleSaveArticle(null, '${post.id}')" class="px-4 py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-md border text-xs font-mono ${
+                                            isArticleSaved 
+                                                ? 'bg-amber-500 text-[#0c0806] border-amber-500' 
+                                                : 'bg-[#231915] border-[#453026] hover:border-amber-500 text-white'
+                                        }">
+                                            <i data-lucide="bookmark" class="w-4 h-4 ${isArticleSaved ? 'fill-[#0c0806]' : 'text-amber-500'}"></i>
+                                            <span>${isArticleSaved ? 'Saved' : 'Save Article'}</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-4 bg-[#0c0806] px-4 py-2 rounded-xl border border-[#2d201a]">
+                                        <div>
+                                            <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider block font-mono">Espresso Roast</span>
+                                        </div>
+                                        <div class="flex gap-1">${cupsHtml}</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </main>
-                `;
+
+                        <div class="bg-[#16100d] border border-[#2d201a] rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
+                            <h3 class="text-base font-bold text-[#fbbf24] flex items-center gap-2 font-serif border-b border-[#231915] pb-3">
+                                <i data-lucide="message-square" class="w-5 h-5 text-[#fbbf24]"></i> Coffee Desk Discussion 
+                                <span class="text-xs font-mono text-gray-400 font-normal">(${articleCommentsList.length} notes logged)</span>
+                            </h3>
+
+                            <form onsubmit="handleAddComment(event, '${post.id}')" class="space-y-3">
+                                <textarea id="comment-box-field" rows="3" required placeholder="Pour your structural perspectives into the thread discussion box..." class="w-full bg-[#0c0806] border border-[#2d201a] rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#fbbf24] resize-none leading-relaxed placeholder-gray-500"></textarea>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="px-5 py-2 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold uppercase tracking-wider rounded-lg transition-all shadow-md flex items-center gap-1.5">
+                                        <i data-lucide="send" class="w-3.5 h-3.5"></i> Post Comment
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="space-y-3 pt-2">
+                                ${commentsHtmlMarkup || `
+                                <div class="p-6 text-center border border-dashed border-[#2d201a] rounded-xl">
+                                    <p class="text-xs text-gray-500 italic">No notes logged on this espresso desk. Be the first to append insight!</p>
+                                </div>`}
+                            </div>
+                        </div>
+                    </div>`;
             }
 
-            // Fire up icons mapping layers
+            // --- ROUTE DECK: ARTICLE AUTHOR COMPOSER LAYOUT ---
+            else if (state.currentView === 'WRITE') {
+                target.innerHTML = `
+                    <div class="max-w-2xl mx-auto space-y-5">
+                        <div class="bg-[#16100d] border border-[#2d201a] p-5 rounded-xl space-y-3">
+                            <h3 class="text-xs uppercase tracking-wider font-bold text-white">Assign Stream Category Tag</h3>
+                            <div class="flex gap-2 flex-wrap">
+                                ${['Gaming', 'Sports', 'Education', 'News', 'GeneralKnowledge'].map(cat => `
+                                    <button onclick="state.writerSelectedCategory='${cat}'; render();" class="px-3 py-1.5 rounded-lg text-xs font-mono border ${state.writerSelectedCategory===cat?'border-[#fbbf24] bg-[#231915] text-[#fbbf24]':'border-[#3c2a22] text-gray-400'}"">#${cat}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <input type="text" id="w-title" placeholder="Title your essay..." class="w-full bg-transparent border-b border-[#2d201a] pb-2 text-2xl font-bold text-white focus:outline-none focus:border-[#fbbf24]" />
+                            
+                            <div class="bg-[#16100d] border border-[#2d201a] p-4 rounded-xl space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider text-[#fbbf24] flex items-center gap-1.5"><i data-lucide="image" class="w-3.5 h-3.5"></i> Attach Feature Image Illustration Link (Optional)</label>
+                                <input type="url" id="w-feature-image" placeholder="Leave empty or paste direct link URL address..." class="w-full bg-[#0c0806] border border-[#2d201a] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#fbbf24]" />
+                            </div>
+
+                            <textarea id="w-body" rows="8" placeholder="Begin weaving your paragraphs..." class="w-full bg-[#16100d] border border-[#2d201a] rounded-xl p-4 text-sm text-white leading-relaxed focus:outline-none focus:border-[#fbbf24] resize-none"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button onclick="handlePublishArticle(event)" class="px-6 py-2.5 bg-[#fbbf24] hover:bg-[#d9a21b] text-[#0c0806] text-xs font-bold rounded-lg tracking-wider uppercase transition-all shadow-md">Publish Content Node</button>
+                        </div>
+                    </div>`;
+            }
+
+            // --- ROUTE DECK: USER ACCOUNT LEDGER & ACTIVITIES HUB ---
+            else if (state.currentView === 'ACCOUNT') {
+                let personalArticles = state.databaseArticles.filter(a => a.author === state.profile.name);
+                
+                const currentLoggedWriterHandle = `@${state.profile.username}`;
+                // Fetch full listing of actual username strings following this profile handle
+                const actualFollowersList = getWriterFollowersList(currentLoggedWriterHandle);
+                const computedFollowersCount = actualFollowersList.length;
+
+                let myPublishedHtml = personalArticles.map(p => `
+                    <div onclick="viewArticleNodeDetails('${p.id}')" class="bg-[#0c0806] border border-[#2d201a] rounded-xl overflow-hidden shadow flex flex-col cursor-pointer hover:border-[#fbbf24]/40 transition-colors group p-4">
+                        <div class="space-y-2">
+                            <span class="text-[10px] font-mono text-[#fbbf24] bg-[#231915] px-2 py-0.5 rounded border border-[#3c2a22]">${p.category}</span>
+                            <h4 class="text-sm font-bold text-[#fbbf24] pt-1 group-hover:text-amber-400">${p.title}</h4>
+                            <p class="text-xs text-white font-light line-clamp-2 leading-relaxed">${p.content}</p>
+                        </div>
+                    </div>`).join('');
+
+                // --- CORRECTED SYSTEM DATA RENDER WORKSPACE HUB SLOTS ---
+                let activityWorkspacesOutputHtml = '';
+                const tab = state.activeAccountActivityTab;
+
+                if (tab === 'SAVED') {
+                    const savedList = state.databaseArticles.filter(a => state.savedArticleIds.includes(String(a.id)));
+                    activityWorkspacesOutputHtml = savedList.map(a => `
+                        <div onclick="viewArticleNodeDetails('${a.id}')" class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl hover:border-amber-500/40 cursor-pointer transition-colors space-y-1">
+                            <div class="flex items-center justify-between text-[10px] font-mono text-gray-400">
+                                <span>${a.category}</span><span>By ${a.author}</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-[#fbbf24]">${a.title}</h4>
+                        </div>
+                    `).join('') || '<p class="text-xs text-gray-500 italic py-3 text-center">Your private bookmarked reading stacks are entirely clear.</p>';
+                } 
+                
+                else if (tab === 'LIKED') {
+                    const likedList = state.databaseArticles.filter(a => state.likedArticleIds.includes(String(a.id)));
+                    activityWorkspacesOutputHtml = likedList.map(a => `
+                        <div onclick="viewArticleNodeDetails('${a.id}')" class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl hover:border-amber-500/40 cursor-pointer transition-colors flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-mono text-gray-400 block">${a.category}</span>
+                                <h4 class="text-sm font-semibold text-[#fbbf24]">${a.title}</h4>
+                            </div>
+                            <div class="text-amber-400 flex items-center gap-1 text-xs font-mono"><i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i> ${a.likes || 0}</div>
+                        </div>
+                    `).join('') || '<p class="text-xs text-gray-500 italic py-3 text-center">You haven\'t injected support likes into any entries yet.</p>';
+                } 
+                
+                else if (tab === 'RATED') {
+                    const ratedList = state.databaseArticles.filter(a => typeof a.rating === 'number');
+                    activityWorkspacesOutputHtml = ratedList.map(a => {
+                        let dynamicCupsVisual = '';
+                        for(let c=1; c<=5; c++) {
+                            dynamicCupsVisual += `<i data-lucide="coffee" class="w-3 h-3 ${c <= (a.rating || 0) ? 'text-[#fbbf24] fill-[#fbbf24]' : 'text-[#30201a]' }"></i>`;
+                        }
+                        return `
+                        <div onclick="viewArticleNodeDetails('${a.id}')" class="p-4 bg-[#0c0806] border border-[#2d201a] rounded-xl hover:border-amber-500/40 cursor-pointer transition-colors flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-mono text-gray-400 block">${a.category}</span>
+                                <h4 class="text-sm font-semibold text-[#fbbf24]">${a.title}</h4>
+                            </div>
+                            <div class="flex gap-0.5 bg-[#16100d] px-2 py-1 rounded border border-[#231915]">${dynamicCupsVisual}</div>
+                        </div>`;
+                    }).join('') || '<p class="text-xs text-gray-500 italic py-3 text-center">No aromatic cup scores registered yet.</p>';
+                } 
+                
+                // FIXED THE RENDERING BUG: NOW EXPLICITLY MAPS UNIQUE CREATOR HANDLES FROM LOCALSTORAGE instead of article data templates
+                else if (tab === 'FOLLOWING') {
+                    activityWorkspacesOutputHtml = state.followingWriters.map(handleStr => `
+                        <div class="p-3.5 bg-[#0c0806] border border-[#2d201a] rounded-xl flex items-center justify-between animate-fadeIn">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_4px_#fbbf24]"></div>
+                                <span class="text-sm font-mono text-[#fbbf24] font-semibold">${handleStr}</span>
+                            </div>
+                            <button onclick="handleToggleFollowWriter(event, '${handleStr}')" class="px-2.5 py-1 text-[11px] font-mono font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded transition-all">
+                                Unfollow
+                            </button>
+                        </div>
+                    `).join('') || '<p class="text-xs text-gray-500 italic py-3 text-center">Your followed creators list workspace channel is empty.</p>';
+                }
+
+                target.innerHTML = `
+                    <div class="space-y-6 max-w-3xl mx-auto">
+                        <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-2xl flex flex-col sm:flex-row items-center gap-5 shadow-xl">
+                            <img src="${state.profile.avatar || defaultCafeAvatars[0]}" class="h-20 w-20 rounded-2xl object-cover border-2 border-[#fbbf24]/50 bg-[#0c0806]" alt="" />
+                            <div class="space-y-1 text-center sm:text-left flex-1">
+                                <h2 class="text-2xl font-bold tracking-wide text-[#fbbf24] font-serif">${state.profile.name}</h2>
+                                <p class="text-xs font-mono text-gray-400">Identity Ledger Handle: <span class="text-[#fbbf24]">${currentLoggedWriterHandle}</span></p>
+                                <p class="text-xs text-white font-light pt-1.5 leading-relaxed">${state.profile.bio || 'Writing from the corner booth.'}</p>
+                            </div>
+                            
+                            <div onclick="state.isFollowersModalOpen=true; render();" class="px-5 py-2.5 bg-[#0c0806] hover:bg-[#231915] rounded-xl border border-[#2d201a] hover:border-[#fbbf24]/60 text-center shrink-0 min-w-[120px] cursor-pointer transition-all active:scale-95 group shadow-md" title="View Followers Roster">
+                                <span class="text-[10px] uppercase text-gray-400 block font-mono tracking-wider font-bold group-hover:text-amber-400 transition-colors">FOLLOWERS</span>
+                                <b class="text-2xl font-bold text-[#fbbf24] font-mono transition-transform block group-hover:scale-105">${computedFollowersCount}</b>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-2xl shadow-xl space-y-4">
+                            <h3 class="text-sm uppercase tracking-widest font-bold text-[#fbbf24] flex items-center gap-1.5 font-serif border-b border-[#2d201a] pb-2">
+                                <i data-lucide="activity" class="w-4 h-4"></i> Account Activities Hub
+                            </h3>
+                            
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <button onclick="state.activeAccountActivityTab='SAVED'; render();" class="px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${tab==='SAVED'?'bg-[#fbbf24] border-[#fbbf24] text-[#0c0806]':'bg-[#0c0806] border-[#2d201a] text-gray-300 hover:border-amber-400/50'}">
+                                    <i data-lucide="bookmark" class="w-3.5 h-3.5"></i> Saved
+                                </button>
+                                <button onclick="state.activeAccountActivityTab='LIKED'; render();" class="px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${tab==='LIKED'?'bg-[#fbbf24] border-[#fbbf24] text-[#0c0806]':'bg-[#0c0806] border-[#2d201a] text-gray-300 hover:border-amber-400/50'}">
+                                    <i data-lucide="heart" class="w-3.5 h-3.5"></i> Liked
+                                </button>
+                                <button onclick="state.activeAccountActivityTab='RATED'; render();" class="px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${tab==='RATED'?'bg-[#fbbf24] border-[#fbbf24] text-[#0c0806]':'bg-[#0c0806] border-[#2d201a] text-gray-300 hover:border-amber-400/50'}">
+                                    <i data-lucide="coffee" class="w-3.5 h-3.5"></i> Rated
+                                </button>
+                                <button onclick="state.activeAccountActivityTab='FOLLOWING'; render();" class="px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${tab==='FOLLOWING'?'bg-[#fbbf24] border-[#fbbf24] text-[#0c0806]':'bg-[#0c0806] border-[#2d201a] text-gray-300 hover:border-amber-400/50'}">
+                                    <i data-lucide="user" class="w-3.5 h-3.5"></i> Following
+                                </button>
+                            </div>
+
+                            <div class="bg-[#1c1410] border border-[#2d201a] p-4 rounded-xl space-y-3 max-h-[300px] overflow-y-auto">
+                                ${activityWorkspacesOutputHtml}
+                            </div>
+                        </div>
+
+                        <div class="bg-[#16100d] border border-[#2d201a] p-6 rounded-xl space-y-4">
+                            <h3 class="text-xs uppercase tracking-widest font-bold text-[#fbbf24] border-b border-[#2d201a] pb-2 flex items-center gap-1.5"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> My Published Posts</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                ${myPublishedHtml || '<p class="text-xs text-gray-400 italic p-4 col-span-2 text-center">No articles written by this table token node yet.</p>'}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
             lucide.createIcons();
         }
 
-        // Initialize template viewport tracking loop
         render();
     </script>
 </body>
